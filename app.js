@@ -1,23 +1,21 @@
 
-// إعدادات Firebase — استبدل القيم ببيانات مشروعك
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBbS1MzPjkiLEagg97OTVCBa-yABqKt1Gg",
+  authDomain: "zahret-hama.firebaseapp.com",
+  projectId: "zahret-hama",
+  storageBucket: "zahret-hama.firebasestorage.app",
+  messagingSenderId: "525184861733",
+  appId: "1:525184861733:web:0f5bb1090a2a29754921cc"
 };
 
-// ضع UID الخاص بحساب الأدمين بعد إنشاء الحساب
-const ADMIN_UID = "PUT_ADMIN_UID_HERE";
+const ADMIN_UID = "bw9BjGepH9Z04LZ361DLc02QzEl2";
 
 let db = null;
 let auth = null;
 let firebaseReady = false;
 
 try {
-  if (window.firebase && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+  if (window.firebase) {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     auth = firebase.auth();
@@ -179,7 +177,6 @@ ${lines.join("\n")}
 
 الإجمالي: ${money(total)} جنيه`;
 
-  // حفظ الطلب في Firestore
   if(firebaseReady) {
     try {
       await db.collection("orders").add({
