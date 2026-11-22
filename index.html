@@ -5,23 +5,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#176b45">
-  <title>زهرة حماة | بقالة ومنتجات غذائية</title>
+  <title>زهرة حماة | المتجر</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="top">
   <div class="nav wrap">
-    <button class="brand" id="brand" aria-label="زهرة حماة">
+    <div class="brand">
       <span class="mark">ز</span>
       <span>
         <b id="storeTitle">زهرة حماة</b>
         <small>كل احتياجات البيت في مكان واحد</small>
       </span>
-    </button>
-    <a class="cart-link" href="#cart">
-      السلة <span id="cartCount">0</span>
-    </a>
+    </div>
+
+    <div class="nav-actions">
+      <a class="cart-link" href="#cart">
+        السلة <span id="cartCount">0</span>
+      </a>
+      <button class="primary" id="openAdmin" type="button">
+        دخول الإدارة
+      </button>
+    </div>
   </div>
 </header>
 
@@ -34,7 +40,7 @@
       <p>اختار احتياجاتك من منتجات الألبان والجبن والبقالة، واطلب بسهولة.</p>
       <a class="primary" href="#products">تسوق دلوقتي</a>
     </div>
-    <div class="hero-art" aria-label="منتجات غذائية">
+    <div class="hero-art">
       <span>🧀</span>
       <span>🥛</span>
       <span>🫒</span>
@@ -58,11 +64,9 @@
       <h2>سلة مشترياتك</h2>
       <button class="link" id="clearCart">تفريغ السلة</button>
     </div>
-
     <div id="cartItems" class="cart-items">
       <p class="muted">السلة لسه فاضية.</p>
     </div>
-
     <div class="cart-bottom">
       <b>الإجمالي: <span id="total">0</span> جنيه</b>
       <button class="primary" id="checkout">إتمام الطلب</button>
@@ -73,7 +77,6 @@
     © <span id="year"></span>
     <span id="footerName">زهرة حماة</span> — نورتونا
   </footer>
-
 </main>
 
 <!-- نافذة إتمام الطلب -->
@@ -82,23 +85,19 @@
     <button class="close" data-close="checkoutModal">×</button>
     <h2>بيانات توصيل الطلب</h2>
 
-    <label>
-      الاسم
+    <label>الاسم
       <input id="customerName" autocomplete="name" required>
     </label>
 
-    <label>
-      رقم الموبايل
+    <label>رقم الموبايل
       <input id="customerPhone" inputmode="tel" autocomplete="tel" required>
     </label>
 
-    <label>
-      العنوان بالتفصيل
+    <label>العنوان بالتفصيل
       <textarea id="customerAddress" rows="3" required></textarea>
     </label>
 
-    <label>
-      طريقة إرسال الطلب
+    <label>طريقة إرسال الطلب
       <select id="contactChannel">
         <option value="whatsapp">واتساب</option>
         <option value="messenger">ماسنجر</option>
@@ -109,10 +108,7 @@
     <button class="primary full" id="sendOrder">
       متابعة إرسال الطلب
     </button>
-
-    <p class="hint">
-      راجع طلبك وبياناتك قبل إرسال الرسالة.
-    </p>
+    <p class="hint">راجع طلبك وبياناتك قبل إرسال الرسالة.</p>
   </div>
 </div>
 
@@ -121,16 +117,15 @@
   <div class="dialog admin-dialog">
     <button class="close" data-close="adminModal">×</button>
 
+    <!-- تسجيل الدخول -->
     <section id="loginPane">
       <h2>دخول الإدارة</h2>
 
-      <label>
-        البريد الإلكتروني
+      <label>البريد الإلكتروني
         <input id="adminEmail" type="email" autocomplete="username">
       </label>
 
-      <label>
-        كلمة المرور
+      <label>كلمة المرور
         <input id="adminPassword" type="password" autocomplete="current-password">
       </label>
 
@@ -138,50 +133,78 @@
       <p id="loginMsg" class="hint"></p>
     </section>
 
+    <!-- لوحة التحكم -->
     <section id="adminPane" class="hidden">
 
       <div class="section-head">
-        <h2>إدارة المتجر</h2>
+        <h2>لوحة إدارة زهرة حماة</h2>
         <button id="logout" class="link">تسجيل خروج</button>
       </div>
 
+      <!-- الإحصائيات -->
+      <h3>إحصائيات المتجر</h3>
+      <div class="admin-stats">
+        <div class="stat-card">
+          <span>كل الطلبات</span>
+          <strong id="statOrders">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>الطلبات الجديدة</span>
+          <strong id="statNew">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>المبيعات المكتملة</span>
+          <strong id="statCompleted">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>إجمالي المبيعات المكتملة</span>
+          <strong id="statRevenue">0 جنيه</strong>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- الطلبات -->
+      <h3>إدارة الطلبات</h3>
+      <div id="adminOrders">
+        <p class="muted">سيتم عرض الطلبات هنا.</p>
+      </div>
+
+      <hr>
+
+      <!-- بيانات المتجر والتواصل -->
       <h3>بيانات المتجر ووسائل التواصل</h3>
 
-      <label>
-        اسم المتجر
+      <label>اسم المتجر
         <input id="editStoreName">
       </label>
 
-      <label>
-        رقم واتساب استقبال الطلبات
+      <label>رقم واتساب استقبال الطلبات
         <input id="editWhatsapp" inputmode="tel" placeholder="مثال: 2010XXXXXXXX">
       </label>
 
-      <label>
-        رابط صفحة ماسنجر
-        <input id="editMessenger" type="url" placeholder="https://m.me/YourPage">
-      </label>
-
-      <label>
-        رابط صفحة فيسبوك
+      <label>رابط صفحة فيسبوك
         <input id="editFacebook" type="url" placeholder="https://facebook.com/YourPage">
       </label>
 
-      <button class="primary" id="saveSettings">
-        حفظ بيانات التواصل
+      <label>رابط ماسنجر
+        <input id="editMessenger" type="url" placeholder="https://m.me/YourPage">
+      </label>
+
+      <button class="primary full" id="saveSettings">
+        حفظ بيانات المتجر والتواصل
       </button>
 
       <hr>
 
+      <!-- تغيير بيانات الدخول -->
       <h3>تغيير بيانات دخول الإدارة</h3>
 
-      <label>
-        الإيميل الجديد
+      <label>الإيميل الجديد
         <input id="newAdminEmail" type="email" autocomplete="email">
       </label>
 
-      <label>
-        كلمة السر الجديدة
+      <label>كلمة السر الجديدة
         <input id="newAdminPassword" type="password" minlength="8" autocomplete="new-password">
       </label>
 
@@ -189,35 +212,28 @@
         تحديث بيانات الدخول
       </button>
 
-      <p class="hint">
-        قد يتطلب تغيير بيانات الدخول تسجيل الدخول من جديد.
-      </p>
-
       <hr>
 
-      <h3>إضافة منتج</h3>
+      <!-- إضافة المنتجات -->
+      <h3>إضافة منتج جديد</h3>
 
-      <label>
-        اسم المنتج
+      <label>اسم المنتج
         <input id="newName">
       </label>
 
-      <label>
-        السعر بالجنيه
+      <label>السعر بالجنيه
         <input id="newPrice" type="number" min="0" step=".01">
       </label>
 
-      <label>
-        القسم
+      <label>القسم
         <input id="newCategory" placeholder="مثال: أجبان">
       </label>
 
-      <label>
-        رابط صورة المنتج (اختياري)
+      <label>رابط صورة المنتج
         <input id="newImage" type="url">
       </label>
 
-      <button class="primary" id="addProduct">
+      <button class="primary full" id="addProduct">
         إضافة المنتج
       </button>
 
@@ -228,12 +244,10 @@
   </div>
 </div>
 
-<!-- مكتبات Firebase -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-<!-- كود المتجر -->
 <script src="app.js"></script>
 
 </body>
