@@ -28,21 +28,14 @@ try {
   console.error("Firebase initialization error:", error);
 }
 
-const sampleProducts = [
-  {id:"s1",name:"جبنة بيضاء",price:85,category:"أجبان",image:"",emoji:"🧀"},
-  {id:"s2",name:"لبن كامل الدسم",price:32,category:"ألبان",image:"",emoji:"🥛"},
-  {id:"s3",name:"زيتون أخضر",price:65,category:"مخللات",image:"",emoji:"🫒"},
-  {id:"s4",name:"عسل أسود",price:45,category:"بقالة",image:"",emoji:"🍯"}
-];
-
-let products = [...sampleProducts];
+let products = [];
 let cart = {};
 
 let settings = {
-  name:"زهرة حماة",
-  whatsapp:"",
-  messenger:"",
-  facebook:""
+  name: "زهرة حماة",
+  whatsapp: "",
+  messenger: "",
+  facebook: ""
 };
 
 let activeCategory = "الكل";
@@ -57,11 +50,11 @@ const money = n =>
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
   }[c]));
 }
 
@@ -73,7 +66,7 @@ async function loadStoreData() {
     const ps = await db.collection("products").get();
 
     products = ps.empty
-      ? [...sampleProducts]
+      ? []
       : ps.docs.map(doc => {
           const data = doc.data();
 
@@ -128,7 +121,7 @@ function render() {
 
   const shown = products.filter(p =>
     (activeCategory === "الكل" || p.category === activeCategory) &&
-    p.name.toLowerCase().includes(q)
+    String(p.name || "").toLowerCase().includes(q)
   );
 
   $("products").innerHTML = shown.length
@@ -142,7 +135,7 @@ function render() {
         <button class="primary" data-add="${esc(p.id)}">أضف للسلة</button>
       </article>
     `).join("")
-    : `<p class="muted">مفيش منتجات مطابقة.</p>`;
+    : `<p class="muted">${products.length ? "مفيش منتجات مطابقة." : "لا توجد منتجات حاليًا."}</p>`;
 
   renderCart();
 }
@@ -256,7 +249,11 @@ $("sendOrder").onclick = async () => {
     return alert("وسيلة التواصل المختارة لسه مش متضافة في إعدادات المتجر.");
   }
 
-  const entries = Object.entries(cart);
+  const entries = Object.entries(cart).filter(([, n]) => n > 0);
+
+  if (!entries.length) {
+    return alert("السلة فاضية.");
+  }
 
   const lines = entries.map(([id, n]) => {
     const p = products.find(x => String(x.id) === id);
@@ -266,8 +263,16 @@ $("sendOrder").onclick = async () => {
       : "";
   }).filter(Boolean);
 
-  const total = entries.reduce((s, [id, n]) =>
-    s + (products.find(p => String(p.id) === id)?.price || 0) * n,
+  const validEntries = entries.filter(([id]) =>
+    products.some(p => String(p.id) === id)
+  );
+
+  if (!validEntries.length) {
+    return alert("المنتجات الموجودة في السلة لم تعد متاحة.");
+  }
+
+  const total = validEntries.reduce((s, [id, n]) =>
+    s + (products.find(p => String(p.id) === id).price * n),
     0
   );
 
@@ -286,16 +291,16 @@ ${lines.join("\n")}
       phone,
       address,
       channel,
-      items: entries.map(([id, quantity]) => {
+      items: validEntries.map(([id, quantity]) => {
         const p = products.find(x => String(x.id) === id);
 
-        return p ? {
+        return {
           productId: id,
           name: p.name,
           price: Number(p.price),
           quantity
-        } : null;
-      }).filter(Boolean),
+        };
+      }),
       total,
       status: "new",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -449,6 +454,10 @@ $("addProduct").onclick = async () => {
     return alert("اكتب اسم المنتج والسعر والقسم بشكل صحيح.");
   }
 
+  if (!firebaseReady) {
+    return alert("Firebase غير مربوط.");
+  }
+
   try {
     await db.collection("products").add({
       name,
@@ -499,6 +508,7 @@ $("adminProducts").addEventListener("click", async e => {
     $("adminMsg").textContent = "تم حذف المنتج.";
 
   } catch (error) {
+    console.error(error);
     $("adminMsg").textContent = "تعذر حذف المنتج.";
   }
 });
@@ -523,20 +533,27 @@ $("updateCredentials").onclick = async () => {
   try {
     const user = auth.currentUser;
 
-    if (email) await user.verifyBeforeUpdateEmail(email);
+    if (email) {
+      if (typeof user.verifyBeforeUpdateEmail === "function") {
+        await user.verifyBeforeUpdateEmail(email);
+      } else {
+        await user.updateEmail(email);
+      }
+    }
+
     if (password) await user.updatePassword(password);
 
     $("newAdminEmail").value = "";
     $("newAdminPassword").value = "";
 
     $("adminMsg").textContent =
-      "تم تنفيذ تحديث بيانات الدخول. راجع بريدك إذا طُلب التأكيد.";
+      "تم تنفيذ تحديث بيانات الدخول. قد تحتاج لتأكيد البريد أو تسجيل الدخول مجددًا.";
 
   } catch (error) {
     console.error(error);
 
     $("adminMsg").textContent =
-      "تعذر تحديث البيانات. قد تحتاج لتسجيل الدخول من جديد.";
+      "تعذر تحديث البيانات. قد تحتاج لإعادة تسجيل الدخول.";
   }
 };
 
