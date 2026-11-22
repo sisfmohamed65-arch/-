@@ -14,6 +14,39 @@ let db = null;
 let auth = null;
 let firebaseReady = false;
 
+let products = [];
+let orders = [];
+let cart = {};
+
+let settings = {
+  name: "زهرة حماة",
+  whatsapp: "",
+  facebook: "",
+  messenger: ""
+};
+
+let activeCategory = "الكل";
+
+const $ = id => document.getElementById(id);
+
+const money = n => Number(n || 0).toLocaleString("ar-EG", {
+  maximumFractionDigits: 2
+});
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
+}
+
+// ==============================
+// تشغيل Firebase
+// ==============================
+
 try {
   if (window.firebase) {
     if (!firebase.apps.length) {
@@ -28,58 +61,29 @@ try {
   console.error("Firebase initialization error:", error);
 }
 
-let products = [];
-let cart = {};
+// ==============================
+// تحميل بيانات المتجر
+// ==============================
 
-let settings = {
-  name: "زهرة حماة",
-  whatsapp: "",
-  messenger: "",
-  facebook: ""
-};
-
-let activeCategory = "الكل";
-let pressTimer;
-
-const $ = id => document.getElementById(id);
-
-const money = n =>
-  Number(n || 0).toLocaleString("ar-EG", {
-    maximumFractionDigits: 2
-  });
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[c]));
-}
-
-// تحميل بيانات المتجر للزوار والإدارة
 async function loadStoreData() {
   if (!firebaseReady) return false;
 
   try {
     const ps = await db.collection("products").get();
 
-    products = ps.empty
-      ? []
-      : ps.docs.map(doc => {
-          const data = doc.data();
+    products = ps.docs.map(doc => {
+      const data = doc.data();
 
-          return {
-            id: doc.id,
-            ...data,
-            name: data.name || "منتج",
-            price: Number(data.price || 0),
-            category: data.category || "أخرى",
-            image: data.image || data.image_url || "",
-            emoji: "🛍️"
-          };
-        });
+      return {
+        id: doc.id,
+        ...data,
+        name: data.name || "منتج",
+        price: Number(data.price || 0),
+        category: data.category || "أخرى",
+        image: data.image || data.image_url || "",
+        emoji: "🛍️"
+      };
+    });
 
     const ss = await db.collection("settings").doc("main").get();
 
@@ -89,8 +93,8 @@ async function loadStoreData() {
       settings = {
         name: data.name || "زهرة حماة",
         whatsapp: data.whatsapp || "",
-        messenger: data.messenger || "",
-        facebook: data.facebook || ""
+        facebook: data.facebook || "",
+        messenger: data.messenger || ""
       };
     }
 
@@ -103,7 +107,10 @@ async function loadStoreData() {
   }
 }
 
-// عرض المنتجات
+// ==============================
+// عرض المتجر والمنتجات
+// ==============================
+
 function render() {
   $("storeTitle").textContent = settings.name;
   $("footerName").textContent = settings.name;
@@ -113,96 +120,121 @@ function render() {
     ...new Set(products.map(p => p.category).filter(Boolean))
   ];
 
-  $("categories").innerHTML = cats.map(c =>
-    `<button class="chip ${activeCategory === c ? "active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`
-  ).join("");
+  $("categories").innerHTML = cats.map(category => `
+    <button
+      class="chip ${activeCategory === category ? "active" : ""}"
+      data-cat="${esc(category)}">
+      ${esc(category)}
+    </button>
+  `).join("");
 
-  const q = $("search").value.trim().toLowerCase();
+  const query = $("search").value.trim().toLowerCase();
 
   const shown = products.filter(p =>
     (activeCategory === "الكل" || p.category === activeCategory) &&
-    String(p.name || "").toLowerCase().includes(q)
+    String(p.name || "").toLowerCase().includes(query)
   );
 
   $("products").innerHTML = shown.length
     ? shown.map(p => `
       <article class="product">
-        ${p.image
-          ? `<img src="${esc(p.image)}" alt="${esc(p.name)}">`
-          : `<div class="placeholder">${p.emoji || "🛍️"}</div>`}
+        ${
+          p.image
+            ? `<img src="${esc(p.image)}" alt="${esc(p.name)}">`
+            : `<div class="placeholder">${p.emoji}</div>`
+        }
+
         <h3>${esc(p.name)}</h3>
         <div class="price">${money(p.price)} جنيه</div>
-        <button class="primary" data-add="${esc(p.id)}">أضف للسلة</button>
+
+        <button class="primary" data-add="${esc(p.id)}">
+          أضف للسلة
+        </button>
       </article>
     `).join("")
-    : `<p class="muted">${products.length ? "مفيش منتجات مطابقة." : "لا توجد منتجات حاليًا."}</p>`;
+    : `<p class="muted">${
+        products.length
+          ? "مفيش منتجات مطابقة."
+          : "لا توجد منتجات حاليًا."
+      }</p>`;
 
   renderCart();
 }
 
-// عرض السلة
+// ==============================
+// السلة
+// ==============================
+
 function renderCart() {
-  const entries = Object.entries(cart).filter(([, n]) => n > 0);
+  const entries = Object.entries(cart).filter(([, quantity]) => quantity > 0);
 
-  const total = entries.reduce((sum, [id, n]) =>
-    sum + (products.find(p => String(p.id) === id)?.price || 0) * n,
-    0
+  const total = entries.reduce((sum, [id, quantity]) => {
+    const product = products.find(p => String(p.id) === id);
+
+    return sum + (product ? product.price * quantity : 0);
+  }, 0);
+
+  $("cartCount").textContent = entries.reduce(
+    (sum, [, quantity]) => sum + quantity, 0
   );
-
-  $("cartCount").textContent =
-    entries.reduce((s, [, n]) => s + n, 0);
 
   $("total").textContent = money(total);
 
   $("cartItems").innerHTML = entries.length
-    ? entries.map(([id, n]) => {
-        const p = products.find(x => String(x.id) === id);
+    ? entries.map(([id, quantity]) => {
+        const product = products.find(p => String(p.id) === id);
 
-        return p ? `
+        if (!product) return "";
+
+        return `
           <div class="cart-row">
-            <span>${esc(p.name)} — ${money(p.price)} جنيه</span>
+            <span>
+              ${esc(product.name)} — ${money(product.price)} جنيه
+            </span>
+
             <span class="qty">
               <button data-minus="${esc(id)}">−</button>
-              ${n}
+              ${quantity}
               <button data-plus="${esc(id)}">+</button>
             </span>
           </div>
-        ` : "";
+        `;
       }).join("")
     : `<p class="muted">السلة لسه فاضية.</p>`;
 }
 
-// إضافة منتج للسلة
-$("products").addEventListener("click", e => {
-  const b = e.target.closest("[data-add]");
-  if (!b) return;
+$("products").addEventListener("click", event => {
+  const button = event.target.closest("[data-add]");
+  if (!button) return;
 
-  const id = b.dataset.add;
+  const id = button.dataset.add;
+
   cart[id] = (cart[id] || 0) + 1;
 
   renderCart();
 });
 
-// تغيير القسم
-$("categories").addEventListener("click", e => {
-  const b = e.target.closest("[data-cat]");
-  if (!b) return;
+$("categories").addEventListener("click", event => {
+  const button = event.target.closest("[data-cat]");
+  if (!button) return;
 
-  activeCategory = b.dataset.cat;
+  activeCategory = button.dataset.cat;
+
   render();
 });
 
-// التحكم في الكميات
-$("cartItems").addEventListener("click", e => {
-  const b = e.target.closest("button");
-  if (!b) return;
+$("cartItems").addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
 
-  const id = b.dataset.plus || b.dataset.minus;
+  const id = button.dataset.plus || button.dataset.minus;
   if (!id) return;
 
-  cart[id] = (cart[id] || 0) + (b.dataset.plus ? 1 : -1);
+  cart[id] = (cart[id] || 0) + (button.dataset.plus ? 1 : -1);
 
-  if (cart[id] <= 0) delete cart[id];
+  if (cart[id] <= 0) {
+    delete cart[id];
+  }
 
   renderCart();
 });
@@ -214,7 +246,10 @@ $("clearCart").onclick = () => {
   renderCart();
 };
 
-// فتح إتمام الطلب
+// ==============================
+// إتمام الطلب
+// ==============================
+
 $("checkout").onclick = () => {
   if (!Object.keys(cart).length) {
     return alert("ضيف منتجات للسلة الأول.");
@@ -223,65 +258,65 @@ $("checkout").onclick = () => {
   $("checkoutModal").classList.remove("hidden");
 };
 
-// إرسال الطلب
 $("sendOrder").onclick = async () => {
   const name = $("customerName").value.trim();
   const phone = $("customerPhone").value.trim();
   const address = $("customerAddress").value.trim();
+  const channel = $("contactChannel").value;
 
   if (!name || !phone || !address) {
-    return alert("من فضلك اكتب الاسم ورقم الموبايل والعنوان.");
+    return alert("اكتب الاسم ورقم الموبايل والعنوان.");
   }
 
   if (!firebaseReady) {
     return alert("تعذر الاتصال بقاعدة البيانات.");
   }
 
-  const channel = $("contactChannel").value;
-
-  const destination = channel === "whatsapp"
-    ? settings.whatsapp
-    : channel === "messenger"
-      ? settings.messenger
-      : settings.facebook;
+  const destination =
+    channel === "whatsapp"
+      ? settings.whatsapp
+      : channel === "messenger"
+        ? settings.messenger
+        : settings.facebook;
 
   if (!destination) {
-    return alert("وسيلة التواصل المختارة لسه مش متضافة في إعدادات المتجر.");
+    return alert("وسيلة التواصل المختارة غير مضافة في إعدادات المتجر.");
   }
 
-  const entries = Object.entries(cart).filter(([, n]) => n > 0);
-
-  if (!entries.length) {
-    return alert("السلة فاضية.");
-  }
-
-  const lines = entries.map(([id, n]) => {
-    const p = products.find(x => String(x.id) === id);
-
-    return p
-      ? `• ${p.name} × ${n} = ${money(p.price * n)} جنيه`
-      : "";
-  }).filter(Boolean);
+  const entries = Object.entries(cart).filter(([, quantity]) => quantity > 0);
 
   const validEntries = entries.filter(([id]) =>
     products.some(p => String(p.id) === id)
   );
 
   if (!validEntries.length) {
-    return alert("المنتجات الموجودة في السلة لم تعد متاحة.");
+    return alert("السلة فارغة أو المنتجات لم تعد متاحة.");
   }
 
-  const total = validEntries.reduce((s, [id, n]) =>
-    s + (products.find(p => String(p.id) === id).price * n),
+  const items = validEntries.map(([id, quantity]) => {
+    const product = products.find(p => String(p.id) === id);
+
+    return {
+      productId: id,
+      name: product.name,
+      price: Number(product.price),
+      quantity
+    };
+  });
+
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  const msg = `طلب جديد من ${settings.name}
+  const message = `طلب جديد من ${settings.name}
 الاسم: ${name}
 الموبايل: ${phone}
 العنوان: ${address}
 
-${lines.join("\n")}
+${items.map(item =>
+  `• ${item.name} × ${item.quantity} = ${money(item.price * item.quantity)} جنيه`
+).join("\n")}
 
 الإجمالي: ${money(total)} جنيه`;
 
@@ -291,16 +326,7 @@ ${lines.join("\n")}
       phone,
       address,
       channel,
-      items: validEntries.map(([id, quantity]) => {
-        const p = products.find(x => String(x.id) === id);
-
-        return {
-          productId: id,
-          name: p.name,
-          price: Number(p.price),
-          quantity
-        };
-      }),
+      items,
       total,
       status: "new",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -315,45 +341,50 @@ ${lines.join("\n")}
     const digits = settings.whatsapp.replace(/\D/g, "");
 
     window.open(
-      `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`,
+      `https://wa.me/${digits}?text=${encodeURIComponent(message)}`,
       "_blank"
     );
 
   } else {
     try {
-      await navigator.clipboard.writeText(msg);
-    } catch (e) {}
+      await navigator.clipboard.writeText(message);
+    } catch (error) {
+      console.error("Clipboard error:", error);
+    }
 
     window.open(destination, "_blank");
 
-    alert("تم نسخ تفاصيل الطلب. الصقها في محادثة الصفحة.");
+    alert("تفاصيل الطلب جاهزة. الصقها في محادثة الصفحة.");
   }
 
   cart = {};
   renderCart();
 
   $("checkoutModal").classList.add("hidden");
+
+  $("customerName").value = "";
+  $("customerPhone").value = "";
+  $("customerAddress").value = "";
 };
 
-// فتح لوحة الإدارة بالضغط المطول على اسم المتجر
-$("brand").addEventListener("pointerdown", () => {
-  pressTimer = setTimeout(() => {
-    $("adminModal").classList.remove("hidden");
-  }, 900);
-});
+// ==============================
+// فتح وإغلاق النوافذ
+// ==============================
 
-["pointerup", "pointerleave", "pointercancel"].forEach(ev => {
-  $("brand").addEventListener(ev, () => clearTimeout(pressTimer));
-});
+$("openAdmin").onclick = () => {
+  $("adminModal").classList.remove("hidden");
+};
 
-// إغلاق النوافذ
-document.querySelectorAll("[data-close]").forEach(b => {
-  b.onclick = () => {
-    $(b.dataset.close).classList.add("hidden");
+document.querySelectorAll("[data-close]").forEach(button => {
+  button.onclick = () => {
+    $(button.dataset.close).classList.add("hidden");
   };
 });
 
+// ==============================
 // تسجيل دخول الإدارة
+// ==============================
+
 $("adminLogin").onclick = async () => {
   if (!firebaseReady) {
     $("loginMsg").textContent = "تعذر الاتصال بـ Firebase.";
@@ -368,6 +399,7 @@ $("adminLogin").onclick = async () => {
 
     if (result.user.uid !== ADMIN_UID) {
       await auth.signOut();
+
       $("loginMsg").textContent = "هذا الحساب ليس حساب الإدارة.";
       return;
     }
@@ -375,16 +407,22 @@ $("adminLogin").onclick = async () => {
     $("loginPane").classList.add("hidden");
     $("adminPane").classList.remove("hidden");
 
+    $("loginMsg").textContent = "";
+
     await loadCloud();
 
   } catch (error) {
     console.error(error);
+
     $("loginMsg").textContent =
       "بيانات الدخول غير صحيحة أو تعذر الاتصال.";
   }
 };
 
-// تحميل بيانات لوحة الإدارة
+// ==============================
+// تحميل لوحة الإدارة
+// ==============================
+
 async function loadCloud() {
   if (!firebaseReady) return;
 
@@ -397,28 +435,206 @@ async function loadCloud() {
 
   $("editStoreName").value = settings.name;
   $("editWhatsapp").value = settings.whatsapp;
-  $("editMessenger").value = settings.messenger;
   $("editFacebook").value = settings.facebook;
+  $("editMessenger").value = settings.messenger;
+
+  await loadOrders();
 
   renderAdminProducts();
 }
 
+// ==============================
+// الطلبات
+// ==============================
+
+async function loadOrders() {
+  try {
+    const snapshot = await db.collection("orders").get();
+
+    orders = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    renderOrders();
+    renderStats();
+
+  } catch (error) {
+    console.error("Orders loading error:", error);
+
+    $("adminOrders").innerHTML =
+      '<p class="hint">تعذر تحميل الطلبات.</p>';
+  }
+}
+
+// ==============================
+// إحصائيات المتجر
+// ==============================
+
+function renderStats() {
+  const completed = orders.filter(
+    order => order.status === "completed"
+  );
+
+  const newOrders = orders.filter(
+    order => order.status === "new"
+  );
+
+  const revenue = completed.reduce(
+    (sum, order) => sum + Number(order.total || 0),
+    0
+  );
+
+  $("statOrders").textContent = orders.length;
+  $("statNew").textContent = newOrders.length;
+  $("statCompleted").textContent = completed.length;
+  $("statRevenue").textContent = money(revenue) + " جنيه";
+}
+
+// ==============================
+// عرض تفاصيل الطلبات
+// ==============================
+
+function renderOrders() {
+  if (!orders.length) {
+    $("adminOrders").innerHTML =
+      '<p class="muted">لا توجد طلبات حتى الآن.</p>';
+    return;
+  }
+
+  const sorted = [...orders].sort((a, b) => {
+    const dateA = a.createdAt?.toMillis?.() || 0;
+    const dateB = b.createdAt?.toMillis?.() || 0;
+
+    return dateB - dateA;
+  });
+
+  $("adminOrders").innerHTML = sorted.map(order => {
+    const items = Array.isArray(order.items) ? order.items : [];
+
+    const statusText =
+      order.status === "completed"
+        ? "مكتمل"
+        : order.status === "cancelled"
+          ? "ملغي"
+          : "جديد";
+
+    const date = order.createdAt?.toDate
+      ? order.createdAt.toDate().toLocaleString("ar-EG")
+      : "وقت التسجيل غير متاح";
+
+    const itemsHtml = items.map(item => `
+      <li>
+        ${esc(item.name)}
+        × ${Number(item.quantity || 0)}
+        — ${money(Number(item.price || 0) * Number(item.quantity || 0))} جنيه
+      </li>
+    `).join("");
+
+    return `
+      <div class="admin-order panel">
+
+        <h4>طلب رقم: ${esc(order.id.slice(0, 8))}</h4>
+
+        <p><b>العميل:</b> ${esc(order.customerName)}</p>
+        <p><b>الهاتف:</b> ${esc(order.phone)}</p>
+        <p><b>العنوان:</b> ${esc(order.address)}</p>
+        <p><b>التاريخ:</b> ${esc(date)}</p>
+        <p><b>طريقة التواصل:</b> ${esc(order.channel)}</p>
+        <p><b>الحالة:</b> ${statusText}</p>
+
+        <p><b>المنتجات:</b></p>
+        <ul>${itemsHtml}</ul>
+
+        <p><b>الإجمالي: ${money(order.total)} جنيه</b></p>
+
+        ${
+          order.status === "new"
+            ? `
+              <div class="order-actions">
+                <button
+                  class="primary"
+                  data-status="completed"
+                  data-id="${esc(order.id)}">
+                  تأكيد اكتمال الطلب
+                </button>
+
+                <button
+                  class="link"
+                  data-status="cancelled"
+                  data-id="${esc(order.id)}">
+                  إلغاء الطلب
+                </button>
+              </div>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+  }).join("");
+}
+
+// تغيير حالة الطلب
+$("adminOrders").addEventListener("click", async event => {
+  const button = event.target.closest("[data-status]");
+  if (!button) return;
+
+  const id = button.dataset.id;
+  const status = button.dataset.status;
+
+  const message = status === "completed"
+    ? "هل تؤكد أن الطلب اكتمل؟"
+    : "هل تريد إلغاء هذا الطلب؟";
+
+  if (!confirm(message)) return;
+
+  try {
+    await db.collection("orders").doc(id).update({
+      status
+    });
+
+    await loadOrders();
+
+    $("adminMsg").textContent = "تم تحديث حالة الطلب.";
+
+  } catch (error) {
+    console.error(error);
+
+    $("adminMsg").textContent =
+      "تعذر تحديث حالة الطلب.";
+  }
+});
+
+// ==============================
 // تسجيل الخروج
+// ==============================
+
 $("logout").onclick = async () => {
-  if (auth) await auth.signOut();
+  if (auth) {
+    await auth.signOut();
+  }
 
   $("adminPane").classList.add("hidden");
   $("loginPane").classList.remove("hidden");
+
+  $("adminModal").classList.add("hidden");
+  $("adminPassword").value = "";
 };
 
-// حفظ إعدادات المتجر
+// ==============================
+// حفظ بيانات المتجر والتواصل
+// ==============================
+
 $("saveSettings").onclick = async () => {
   const name = $("editStoreName").value.trim();
   const whatsapp = $("editWhatsapp").value.trim();
-  const messenger = $("editMessenger").value.trim();
   const facebook = $("editFacebook").value.trim();
+  const messenger = $("editMessenger").value.trim();
 
-  if (!name) return alert("اكتب اسم المتجر.");
+  if (!name) {
+    return alert("اكتب اسم المتجر.");
+  }
 
   if (!firebaseReady) {
     return alert("Firebase غير مربوط.");
@@ -428,29 +644,47 @@ $("saveSettings").onclick = async () => {
     await db.collection("settings").doc("main").set({
       name,
       whatsapp,
-      messenger,
-      facebook
+      facebook,
+      messenger
     }, { merge: true });
 
-    settings = { name, whatsapp, messenger, facebook };
+    settings = {
+      name,
+      whatsapp,
+      facebook,
+      messenger
+    };
 
     render();
 
-    $("adminMsg").textContent = "تم حفظ إعدادات المتجر.";
+    $("adminMsg").textContent =
+      "تم حفظ اسم المتجر وبيانات التواصل.";
 
   } catch (error) {
-    $("adminMsg").textContent = "تعذر الحفظ: " + error.message;
+    console.error(error);
+
+    $("adminMsg").textContent =
+      "تعذر الحفظ: " + error.message;
   }
 };
 
+// ==============================
 // إضافة منتج
+// ==============================
+
 $("addProduct").onclick = async () => {
   const name = $("newName").value.trim();
   const price = Number($("newPrice").value);
   const category = $("newCategory").value.trim();
   const image = $("newImage").value.trim();
 
-  if (!name || !Number.isFinite(price) || price < 0 || !category) {
+  if (
+    !name ||
+    $("newPrice").value.trim() === "" ||
+    !Number.isFinite(price) ||
+    price < 0 ||
+    !category
+  ) {
     return alert("اكتب اسم المنتج والسعر والقسم بشكل صحيح.");
   }
 
@@ -478,30 +712,49 @@ $("addProduct").onclick = async () => {
 
   } catch (error) {
     console.error(error);
-    $("adminMsg").textContent = "تعذر إضافة المنتج: " + error.message;
+
+    $("adminMsg").textContent =
+      "تعذر إضافة المنتج: " + error.message;
   }
 };
 
-// عرض منتجات الإدارة
+// ==============================
+// عرض المنتجات في الإدارة
+// ==============================
+
 function renderAdminProducts() {
   $("adminProducts").innerHTML =
     "<h3>المنتجات الحالية</h3>" +
-    products.map(p => `
-      <div class="admin-product">
-        <span>${esc(p.name)} — ${money(p.price)} ج</span>
-        <button class="link" data-delete="${esc(p.id)}">حذف</button>
-      </div>
-    `).join("");
+    (
+      products.length
+        ? products.map(product => `
+            <div class="admin-product">
+              <span>
+                ${esc(product.name)} — ${money(product.price)} جنيه
+              </span>
+
+              <button
+                class="link"
+                data-delete="${esc(product.id)}">
+                حذف
+              </button>
+            </div>
+          `).join("")
+        : '<p class="muted">لا توجد منتجات.</p>'
+    );
 }
 
 // حذف منتج
-$("adminProducts").addEventListener("click", async e => {
-  const b = e.target.closest("[data-delete]");
+$("adminProducts").addEventListener("click", async event => {
+  const button = event.target.closest("[data-delete]");
+  if (!button) return;
 
-  if (!b || !confirm("متأكد من حذف المنتج؟")) return;
+  if (!confirm("متأكد من حذف المنتج؟")) return;
 
   try {
-    await db.collection("products").doc(b.dataset.delete).delete();
+    await db.collection("products")
+      .doc(button.dataset.delete)
+      .delete();
 
     await loadCloud();
 
@@ -509,14 +762,23 @@ $("adminProducts").addEventListener("click", async e => {
 
   } catch (error) {
     console.error(error);
-    $("adminMsg").textContent = "تعذر حذف المنتج.";
+
+    $("adminMsg").textContent =
+      "تعذر حذف المنتج.";
   }
 });
 
-// تحديث بيانات دخول الإدارة
+// ==============================
+// تغيير بيانات دخول الإدارة
+// ==============================
+
 $("updateCredentials").onclick = async () => {
   if (!auth || !auth.currentUser) {
     return alert("سجّل دخول الإدارة أولاً.");
+  }
+
+  if (auth.currentUser.uid !== ADMIN_UID) {
+    return alert("هذا الحساب ليس حساب الإدارة.");
   }
 
   const email = $("newAdminEmail").value.trim();
@@ -541,7 +803,9 @@ $("updateCredentials").onclick = async () => {
       }
     }
 
-    if (password) await user.updatePassword(password);
+    if (password) {
+      await user.updatePassword(password);
+    }
 
     $("newAdminEmail").value = "";
     $("newAdminPassword").value = "";
@@ -553,17 +817,18 @@ $("updateCredentials").onclick = async () => {
     console.error(error);
 
     $("adminMsg").textContent =
-      "تعذر تحديث البيانات. قد تحتاج لإعادة تسجيل الدخول.";
+      "تعذر تحديث البيانات. قد تحتاج إلى تسجيل الدخول من جديد.";
   }
 };
 
-// السنة الحالية
+// ==============================
+// بداية تشغيل الموقع
+// ==============================
+
 $("year").textContent = new Date().getFullYear();
 
-// عرض أولي
 render();
 
-// تحميل المنتجات والإعدادات للزوار تلقائيًا
 if (firebaseReady) {
   loadStoreData();
 }
