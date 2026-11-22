@@ -1,62 +1,240 @@
+
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#176b45"><title>زهرة حماة | بقالة ومنتجات غذائية</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b45">
+  <title>زهرة حماة | بقالة ومنتجات غذائية</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
 <header class="top">
   <div class="nav wrap">
-    <button class="brand" id="brand" aria-label="زهرة حماة"><span class="mark">ز</span><span><b id="storeTitle">زهرة حماة</b><small>كل احتياجات البيت في مكان واحد</small></span></button>
-    <a class="cart-link" href="#cart">السلة <span id="cartCount">0</span></a>
+    <button class="brand" id="brand" aria-label="زهرة حماة">
+      <span class="mark">ز</span>
+      <span>
+        <b id="storeTitle">زهرة حماة</b>
+        <small>كل احتياجات البيت في مكان واحد</small>
+      </span>
+    </button>
+    <a class="cart-link" href="#cart">
+      السلة <span id="cartCount">0</span>
+    </a>
   </div>
 </header>
+
 <main class="wrap">
+
   <section class="hero">
-    <div><span class="eyebrow">أهلاً بيكم في زهرة حماة</span><h1>طعم البيت… وجودة تثق فيها</h1>
-    <p>اختار احتياجاتك من منتجات الألبان والجبن والبقالة، واطلب بسهولة.</p>
-    <a class="primary" href="#products">تسوق دلوقتي</a></div>
-    <div class="hero-art" aria-label="منتجات غذائية"><span>🧀</span><span>🥛</span><span>🫒</span><span>🥫</span></div>
+    <div>
+      <span class="eyebrow">أهلاً بيكم في زهرة حماة</span>
+      <h1>طعم البيت… وجودة تثق فيها</h1>
+      <p>اختار احتياجاتك من منتجات الألبان والجبن والبقالة، واطلب بسهولة.</p>
+      <a class="primary" href="#products">تسوق دلوقتي</a>
+    </div>
+    <div class="hero-art" aria-label="منتجات غذائية">
+      <span>🧀</span>
+      <span>🥛</span>
+      <span>🫒</span>
+      <span>🥫</span>
+    </div>
   </section>
-  <section class="section-head"><div><span class="eyebrow">اختياراتنا</span><h2>منتجات المتجر</h2></div><input id="search" placeholder="دور على منتج..." aria-label="بحث"></section>
+
+  <section class="section-head">
+    <div>
+      <span class="eyebrow">اختياراتنا</span>
+      <h2>منتجات المتجر</h2>
+    </div>
+    <input id="search" placeholder="دور على منتج..." aria-label="بحث">
+  </section>
+
   <div id="categories" class="chips"></div>
   <section id="products" class="products"></section>
-  <section id="cart" class="cart panel"><div class="section-head"><h2>سلة مشترياتك</h2><button class="link" id="clearCart">تفريغ السلة</button></div>
-    <div id="cartItems" class="cart-items"><p class="muted">السلة لسه فاضية.</p></div>
-    <div class="cart-bottom"><b>الإجمالي: <span id="total">0</span> جنيه</b><button class="primary" id="checkout">إتمام الطلب</button></div>
+
+  <section id="cart" class="cart panel">
+    <div class="section-head">
+      <h2>سلة مشترياتك</h2>
+      <button class="link" id="clearCart">تفريغ السلة</button>
+    </div>
+
+    <div id="cartItems" class="cart-items">
+      <p class="muted">السلة لسه فاضية.</p>
+    </div>
+
+    <div class="cart-bottom">
+      <b>الإجمالي: <span id="total">0</span> جنيه</b>
+      <button class="primary" id="checkout">إتمام الطلب</button>
+    </div>
   </section>
-  <footer>© <span id="year"></span> <span id="footerName">زهرة حماة</span> — نورتونا</footer>
+
+  <footer>
+    © <span id="year"></span>
+    <span id="footerName">زهرة حماة</span> — نورتونا
+  </footer>
+
 </main>
 
-<div class="modal hidden" id="checkoutModal"><div class="dialog"><button class="close" data-close="checkoutModal">×</button><h2>بيانات توصيل الطلب</h2>
-  <label>الاسم<input id="customerName" autocomplete="name" required></label>
-  <label>رقم الموبايل<input id="customerPhone" inputmode="tel" autocomplete="tel" required></label>
-  <label>العنوان بالتفصيل<textarea id="customerAddress" rows="3" required></textarea></label>
-  <label>طريقة إرسال الطلب
-    <select id="contactChannel"><option value="whatsapp">واتساب</option><option value="messenger">ماسنجر</option><option value="facebook">صفحة فيسبوك</option></select>
-  </label>
-  <button class="primary full" id="sendOrder">متابعة إرسال الطلب</button><p class="hint">هتراجع طلبك وبياناتك قبل ما يفتح واتساب لإرسال الرسالة.</p>
-</div></div>
+<!-- نافذة إتمام الطلب -->
+<div class="modal hidden" id="checkoutModal">
+  <div class="dialog">
+    <button class="close" data-close="checkoutModal">×</button>
+    <h2>بيانات توصيل الطلب</h2>
 
-<div class="modal hidden" id="adminModal"><div class="dialog admin-dialog"><button class="close" data-close="adminModal">×</button>
-  <section id="loginPane"><h2>دخول الإدارة</h2><label>البريد الإلكتروني<input id="adminEmail" type="email" autocomplete="username"></label><label>كلمة المرور<input id="adminPassword" type="password" autocomplete="current-password"></label><button class="primary full" id="adminLogin">دخول</button><p id="loginMsg" class="hint"></p></section>
-  <section id="adminPane" class="hidden"><div class="section-head"><h2>إدارة المتجر</h2><button id="logout" class="link">تسجيل خروج</button></div>
-    <h3>بيانات المتجر ووسائل التواصل</h3>
-    <label>اسم المتجر<input id="editStoreName"></label>
-    <label>رقم واتساب استقبال الطلبات<input id="editWhatsapp" inputmode="tel" placeholder="مثال: 2010XXXXXXXX"></label>
-    <label>رابط صفحة ماسنجر (رابط m.me)<input id="editMessenger" type="url" placeholder="https://m.me/YourPage"></label>
-    <label>رابط صفحة فيسبوك<input id="editFacebook" type="url" placeholder="https://facebook.com/YourPage"></label>
-    <button class="primary" id="saveSettings">حفظ بيانات التواصل</button>
-    <hr><h3>تغيير بيانات دخول الإدارة</h3>
-    <label>الإيميل الجديد (اتركه فارغًا لو مش هتغيره)<input id="newAdminEmail" type="email" autocomplete="email"></label>
-    <label>كلمة السر الجديدة (اتركها فارغة لو مش هتغيرها)<input id="newAdminPassword" type="password" minlength="8" autocomplete="new-password"></label>
-    <button class="primary" id="updateCredentials">تحديث بيانات الدخول</button>
-    <p class="hint">قد يطلب Supabase تأكيد الإيميل الجديد من رسالة تصل إلى بريدك.</p>
-    <hr><h3>إضافة منتج</h3><label>اسم المنتج<input id="newName"></label><label>السعر بالجنيه<input id="newPrice" type="number" min="0" step=".01"></label><label>القسم<input id="newCategory" placeholder="مثال: أجبان"></label><label>رابط صورة المنتج (اختياري)<input id="newImage" type="url"></label><button class="primary" id="addProduct">إضافة المنتج</button>
-    <p class="hint" id="adminMsg"></p><div id="adminProducts"></div>
-  </section>
-</div></div>
+    <label>
+      الاسم
+      <input id="customerName" autocomplete="name" required>
+    </label>
+
+    <label>
+      رقم الموبايل
+      <input id="customerPhone" inputmode="tel" autocomplete="tel" required>
+    </label>
+
+    <label>
+      العنوان بالتفصيل
+      <textarea id="customerAddress" rows="3" required></textarea>
+    </label>
+
+    <label>
+      طريقة إرسال الطلب
+      <select id="contactChannel">
+        <option value="whatsapp">واتساب</option>
+        <option value="messenger">ماسنجر</option>
+        <option value="facebook">صفحة فيسبوك</option>
+      </select>
+    </label>
+
+    <button class="primary full" id="sendOrder">
+      متابعة إرسال الطلب
+    </button>
+
+    <p class="hint">
+      راجع طلبك وبياناتك قبل إرسال الرسالة.
+    </p>
+  </div>
+</div>
+
+<!-- نافذة الإدارة -->
+<div class="modal hidden" id="adminModal">
+  <div class="dialog admin-dialog">
+    <button class="close" data-close="adminModal">×</button>
+
+    <section id="loginPane">
+      <h2>دخول الإدارة</h2>
+
+      <label>
+        البريد الإلكتروني
+        <input id="adminEmail" type="email" autocomplete="username">
+      </label>
+
+      <label>
+        كلمة المرور
+        <input id="adminPassword" type="password" autocomplete="current-password">
+      </label>
+
+      <button class="primary full" id="adminLogin">دخول</button>
+      <p id="loginMsg" class="hint"></p>
+    </section>
+
+    <section id="adminPane" class="hidden">
+
+      <div class="section-head">
+        <h2>إدارة المتجر</h2>
+        <button id="logout" class="link">تسجيل خروج</button>
+      </div>
+
+      <h3>بيانات المتجر ووسائل التواصل</h3>
+
+      <label>
+        اسم المتجر
+        <input id="editStoreName">
+      </label>
+
+      <label>
+        رقم واتساب استقبال الطلبات
+        <input id="editWhatsapp" inputmode="tel" placeholder="مثال: 2010XXXXXXXX">
+      </label>
+
+      <label>
+        رابط صفحة ماسنجر
+        <input id="editMessenger" type="url" placeholder="https://m.me/YourPage">
+      </label>
+
+      <label>
+        رابط صفحة فيسبوك
+        <input id="editFacebook" type="url" placeholder="https://facebook.com/YourPage">
+      </label>
+
+      <button class="primary" id="saveSettings">
+        حفظ بيانات التواصل
+      </button>
+
+      <hr>
+
+      <h3>تغيير بيانات دخول الإدارة</h3>
+
+      <label>
+        الإيميل الجديد
+        <input id="newAdminEmail" type="email" autocomplete="email">
+      </label>
+
+      <label>
+        كلمة السر الجديدة
+        <input id="newAdminPassword" type="password" minlength="8" autocomplete="new-password">
+      </label>
+
+      <button class="primary" id="updateCredentials">
+        تحديث بيانات الدخول
+      </button>
+
+      <p class="hint">
+        قد يتطلب تغيير بيانات الدخول تسجيل الدخول من جديد.
+      </p>
+
+      <hr>
+
+      <h3>إضافة منتج</h3>
+
+      <label>
+        اسم المنتج
+        <input id="newName">
+      </label>
+
+      <label>
+        السعر بالجنيه
+        <input id="newPrice" type="number" min="0" step=".01">
+      </label>
+
+      <label>
+        القسم
+        <input id="newCategory" placeholder="مثال: أجبان">
+      </label>
+
+      <label>
+        رابط صورة المنتج (اختياري)
+        <input id="newImage" type="url">
+      </label>
+
+      <button class="primary" id="addProduct">
+        إضافة المنتج
+      </button>
+
+      <p class="hint" id="adminMsg"></p>
+      <div id="adminProducts"></div>
+
+    </section>
+  </div>
+</div>
+
+<!-- مكتبات Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<!-- كود المتجر -->
 <script src="app.js"></script>
-</body></html>
+
+</body>
+</html>
