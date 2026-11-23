@@ -1,3 +1,8 @@
+
+// ==================================
+// إعدادات Firebase
+// ==================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyBbS1MzPjkiLEagg97OTVCBa-yABqKt1Gg",
   authDomain: "zahret-hama.firebaseapp.com",
@@ -842,10 +847,11 @@ function renderAdminProducts() {
   }
 
   $("adminProducts").innerHTML = products.map(product => `
-    <div class="admin-product">
+    <div class="admin-product panel">
       <div>
         <strong>${esc(product.name)}</strong>
-        <p>${money(product.price)} جنيه — ${esc(product.category)}</p>
+        <p>${money(product.price)} جنيه</p>
+        <small>${esc(product.category)}</small>
       </div>
 
       <button
@@ -868,20 +874,19 @@ $("adminProducts").addEventListener("click", async event => {
 
   const id = button.dataset.deleteProduct;
 
-  if (!confirm("هل تريد حذف هذا المنتج؟")) return;
+  if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
 
   try {
     await db.collection("products").doc(id).delete();
 
-    delete cart[id];
-
     await loadCloud();
 
-    $("adminMsg").textContent = "تم حذف المنتج.";
+    $("adminMsg").textContent = "تم حذف المنتج بنجاح.";
 
   } catch (error) {
     console.error("Delete product error:", error);
-    $("adminMsg").textContent = "تعذر حذف المنتج: " + error.message;
+    $("adminMsg").textContent =
+      "تعذر حذف المنتج: " + error.message;
   }
 });
 
@@ -890,28 +895,30 @@ $("adminProducts").addEventListener("click", async event => {
 // ==================================
 
 $("updateAdminCredentials").onclick = async () => {
-  if (!auth || !auth.currentUser) {
-    return alert("سجّل دخول الإدارة أولًا.");
+  const email = $("newAdminEmail").value.trim();
+  const password = $("newAdminPassword").value;
+
+  const user = auth && auth.currentUser;
+
+  if (!user || user.uid !== ADMIN_UID) {
+    return alert("يجب تسجيل الدخول بحساب الإدارة أولًا.");
   }
 
-  const newEmail = $("newAdminEmail").value.trim();
-  const newPassword = $("newAdminPassword").value;
-
-  if (!newEmail && !newPassword) {
+  if (!email && !password) {
     return alert("اكتب البريد الجديد أو كلمة المرور الجديدة.");
   }
 
+  if (password && password.length < 6) {
+    return alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+  }
+
   try {
-    if (newEmail) {
-      await auth.currentUser.updateEmail(newEmail);
+    if (email) {
+      await user.updateEmail(email);
     }
 
-    if (newPassword) {
-      if (newPassword.length < 6) {
-        return alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
-      }
-
-      await auth.currentUser.updatePassword(newPassword);
+    if (password) {
+      await user.updatePassword(password);
     }
 
     $("newAdminEmail").value = "";
@@ -924,22 +931,40 @@ $("updateAdminCredentials").onclick = async () => {
     console.error("Credentials update error:", error);
 
     $("adminMsg").textContent =
-      "تعذر تحديث البيانات. قد تحتاج إلى تسجيل الدخول مرة أخرى.";
+      "تعذر تحديث البيانات. قد تحتاج إلى تسجيل الدخول مرة أخرى. " +
+      error.message;
   }
 };
 
 // ==================================
-// تشغيل المتجر
+// بدء تشغيل المتجر
 // ==================================
 
 async function startStore() {
   if (!firebaseReady) {
     $("products").innerHTML =
-      '<p class="muted">تعذر الاتصال بقاعدة البيانات.</p>';
+      '<p class="hint">تعذر الاتصال بخدمة المتجر. راجع إعدادات Firebase.</p>';
     return;
   }
 
   await loadStoreData();
+
+  auth.onAuthStateChanged(async user => {
+    if (user && user.uid === ADMIN_UID) {
+      $("loginPane").classList.add("hidden");
+      $("adminPane").classList.remove("hidden");
+
+      await loadCloud();
+
+    } else {
+      $("loginPane").classList.remove("hidden");
+      $("adminPane").classList.add("hidden");
+    }
+  });
 }
+
+// ==================================
+// تشغيل الموقع
+// ==================================
 
 startStore();
