@@ -26,6 +26,7 @@ let settings = {
 };
 
 let activeCategory = "الكل";
+let selectedProductImage = "";
 
 const $ = id => document.getElementById(id);
 
@@ -43,9 +44,9 @@ function esc(value) {
   }[c]));
 }
 
-// ==============================
+// ==================================
 // تشغيل Firebase
-// ==============================
+// ==================================
 
 try {
   if (window.firebase) {
@@ -61,9 +62,9 @@ try {
   console.error("Firebase initialization error:", error);
 }
 
-// ==============================
+// ==================================
 // تحميل بيانات المتجر
-// ==============================
+// ==================================
 
 async function loadStoreData() {
   if (!firebaseReady) return false;
@@ -107,13 +108,17 @@ async function loadStoreData() {
   }
 }
 
-// ==============================
+// ==================================
 // عرض المتجر والمنتجات
-// ==============================
+// ==================================
 
 function render() {
   $("storeTitle").textContent = settings.name;
   $("footerName").textContent = settings.name;
+
+  if ($("footerNameBottom")) {
+    $("footerNameBottom").textContent = settings.name;
+  }
 
   const cats = [
     "الكل",
@@ -161,16 +166,15 @@ function render() {
   renderCart();
 }
 
-// ==============================
+// ==================================
 // السلة
-// ==============================
+// ==================================
 
 function renderCart() {
   const entries = Object.entries(cart).filter(([, quantity]) => quantity > 0);
 
   const total = entries.reduce((sum, [id, quantity]) => {
     const product = products.find(p => String(p.id) === id);
-
     return sum + (product ? product.price * quantity : 0);
   }, 0);
 
@@ -183,7 +187,6 @@ function renderCart() {
   $("cartItems").innerHTML = entries.length
     ? entries.map(([id, quantity]) => {
         const product = products.find(p => String(p.id) === id);
-
         if (!product) return "";
 
         return `
@@ -193,9 +196,9 @@ function renderCart() {
             </span>
 
             <span class="qty">
-              <button data-minus="${esc(id)}">−</button>
+              <button data-minus="${esc(id)}" type="button">−</button>
               ${quantity}
-              <button data-plus="${esc(id)}">+</button>
+              <button data-plus="${esc(id)}" type="button">+</button>
             </span>
           </div>
         `;
@@ -208,7 +211,6 @@ $("products").addEventListener("click", event => {
   if (!button) return;
 
   const id = button.dataset.add;
-
   cart[id] = (cart[id] || 0) + 1;
 
   renderCart();
@@ -219,7 +221,6 @@ $("categories").addEventListener("click", event => {
   if (!button) return;
 
   activeCategory = button.dataset.cat;
-
   render();
 });
 
@@ -246,9 +247,9 @@ $("clearCart").onclick = () => {
   renderCart();
 };
 
-// ==============================
+// ==================================
 // إتمام الطلب
-// ==============================
+// ==================================
 
 $("checkout").onclick = () => {
   if (!Object.keys(cart).length) {
@@ -320,6 +321,9 @@ ${items.map(item =>
 
 الإجمالي: ${money(total)} جنيه`;
 
+  const sendButton = $("sendOrder");
+  sendButton.disabled = true;
+
   try {
     await db.collection("orders").add({
       customerName: name,
@@ -334,7 +338,9 @@ ${items.map(item =>
 
   } catch (error) {
     console.error("Order error:", error);
-    return alert("تعذر حفظ الطلب. حاول مرة أخرى.");
+    alert("تعذر حفظ الطلب. حاول مرة أخرى.");
+    sendButton.disabled = false;
+    return;
   }
 
   if (channel === "whatsapp") {
@@ -353,7 +359,6 @@ ${items.map(item =>
     }
 
     window.open(destination, "_blank");
-
     alert("تفاصيل الطلب جاهزة. الصقها في محادثة الصفحة.");
   }
 
@@ -361,15 +366,16 @@ ${items.map(item =>
   renderCart();
 
   $("checkoutModal").classList.add("hidden");
-
   $("customerName").value = "";
   $("customerPhone").value = "";
   $("customerAddress").value = "";
+
+  sendButton.disabled = false;
 };
 
-// ==============================
+// ==================================
 // فتح وإغلاق النوافذ
-// ==============================
+// ==================================
 
 $("openAdmin").onclick = () => {
   $("adminModal").classList.remove("hidden");
@@ -381,9 +387,9 @@ document.querySelectorAll("[data-close]").forEach(button => {
   };
 });
 
-// ==============================
+// ==================================
 // تسجيل دخول الإدارة
-// ==============================
+// ==================================
 
 $("adminLogin").onclick = async () => {
   if (!firebaseReady) {
@@ -399,29 +405,26 @@ $("adminLogin").onclick = async () => {
 
     if (result.user.uid !== ADMIN_UID) {
       await auth.signOut();
-
       $("loginMsg").textContent = "هذا الحساب ليس حساب الإدارة.";
       return;
     }
 
     $("loginPane").classList.add("hidden");
     $("adminPane").classList.remove("hidden");
-
     $("loginMsg").textContent = "";
 
     await loadCloud();
 
   } catch (error) {
     console.error(error);
-
     $("loginMsg").textContent =
       "بيانات الدخول غير صحيحة أو تعذر الاتصال.";
   }
 };
 
-// ==============================
+// ==================================
 // تحميل لوحة الإدارة
-// ==============================
+// ==================================
 
 async function loadCloud() {
   if (!firebaseReady) return;
@@ -439,13 +442,12 @@ async function loadCloud() {
   $("editMessenger").value = settings.messenger;
 
   await loadOrders();
-
   renderAdminProducts();
 }
 
-// ==============================
+// ==================================
 // الطلبات
-// ==============================
+// ==================================
 
 async function loadOrders() {
   try {
@@ -467,9 +469,9 @@ async function loadOrders() {
   }
 }
 
-// ==============================
+// ==================================
 // إحصائيات المتجر
-// ==============================
+// ==================================
 
 function renderStats() {
   const completed = orders.filter(
@@ -491,9 +493,9 @@ function renderStats() {
   $("statRevenue").textContent = money(revenue) + " جنيه";
 }
 
-// ==============================
+// ==================================
 // عرض تفاصيل الطلبات
-// ==============================
+// ==================================
 
 function renderOrders() {
   if (!orders.length) {
@@ -505,7 +507,6 @@ function renderOrders() {
   const sorted = [...orders].sort((a, b) => {
     const dateA = a.createdAt?.toMillis?.() || 0;
     const dateB = b.createdAt?.toMillis?.() || 0;
-
     return dateB - dateA;
   });
 
@@ -533,19 +534,15 @@ function renderOrders() {
 
     return `
       <div class="admin-order panel">
-
         <h4>طلب رقم: ${esc(order.id.slice(0, 8))}</h4>
-
         <p><b>العميل:</b> ${esc(order.customerName)}</p>
         <p><b>الهاتف:</b> ${esc(order.phone)}</p>
         <p><b>العنوان:</b> ${esc(order.address)}</p>
         <p><b>التاريخ:</b> ${esc(date)}</p>
         <p><b>طريقة التواصل:</b> ${esc(order.channel)}</p>
         <p><b>الحالة:</b> ${statusText}</p>
-
         <p><b>المنتجات:</b></p>
         <ul>${itemsHtml}</ul>
-
         <p><b>الإجمالي: ${money(order.total)} جنيه</b></p>
 
         ${
@@ -569,13 +566,15 @@ function renderOrders() {
             `
             : ""
         }
-
       </div>
     `;
   }).join("");
 }
 
+// ==================================
 // تغيير حالة الطلب
+// ==================================
+
 $("adminOrders").addEventListener("click", async event => {
   const button = event.target.closest("[data-status]");
   if (!button) return;
@@ -590,25 +589,20 @@ $("adminOrders").addEventListener("click", async event => {
   if (!confirm(message)) return;
 
   try {
-    await db.collection("orders").doc(id).update({
-      status
-    });
+    await db.collection("orders").doc(id).update({ status });
 
     await loadOrders();
-
     $("adminMsg").textContent = "تم تحديث حالة الطلب.";
 
   } catch (error) {
     console.error(error);
-
-    $("adminMsg").textContent =
-      "تعذر تحديث حالة الطلب.";
+    $("adminMsg").textContent = "تعذر تحديث حالة الطلب.";
   }
 });
 
-// ==============================
+// ==================================
 // تسجيل الخروج
-// ==============================
+// ==================================
 
 $("logout").onclick = async () => {
   if (auth) {
@@ -617,14 +611,13 @@ $("logout").onclick = async () => {
 
   $("adminPane").classList.add("hidden");
   $("loginPane").classList.remove("hidden");
-
   $("adminModal").classList.add("hidden");
   $("adminPassword").value = "";
 };
 
-// ==============================
+// ==================================
 // حفظ بيانات المتجر والتواصل
-// ==============================
+// ==================================
 
 $("saveSettings").onclick = async () => {
   const name = $("editStoreName").value.trim();
@@ -648,12 +641,7 @@ $("saveSettings").onclick = async () => {
       messenger
     }, { merge: true });
 
-    settings = {
-      name,
-      whatsapp,
-      facebook,
-      messenger
-    };
+    settings = { name, whatsapp, facebook, messenger };
 
     render();
 
@@ -662,21 +650,134 @@ $("saveSettings").onclick = async () => {
 
   } catch (error) {
     console.error(error);
-
-    $("adminMsg").textContent =
-      "تعذر الحفظ: " + error.message;
+    $("adminMsg").textContent = "تعذر الحفظ: " + error.message;
   }
 };
 
-// ==============================
-// إضافة منتج
-// ==============================
+// ==================================
+// اختيار وضغط صورة المنتج
+// ==================================
+
+function compressProductImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) {
+      reject(new Error("الملف المختار ليس صورة."));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error("تعذر قراءة الصورة."));
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onerror = () => reject(new Error("الصورة غير صالحة."));
+
+      img.onload = () => {
+        const maxSide = 900;
+        const scale = Math.min(
+          1,
+          maxSide / Math.max(img.width, img.height)
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          reject(new Error("تعذر تجهيز الصورة."));
+          return;
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let quality = 0.65;
+        let result = canvas.toDataURL("image/jpeg", quality);
+
+        while (result.length > 240000 && quality > 0.3) {
+          quality -= 0.08;
+          result = canvas.toDataURL("image/jpeg", quality);
+        }
+
+        if (result.length > 240000) {
+          reject(new Error("الصورة كبيرة جدًا. اختر صورة أصغر."));
+          return;
+        }
+
+        resolve(result);
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function previewProductImage(data) {
+  selectedProductImage = data;
+
+  $("productImagePreview").src = data;
+  $("productImagePreview").classList.remove("hidden");
+  $("removeProductImage").classList.remove("hidden");
+}
+
+async function handleProductImage(file) {
+  if (!file) return;
+
+  try {
+    const image = await compressProductImage(file);
+    previewProductImage(image);
+  } catch (error) {
+    alert(error.message || "تعذر تجهيز الصورة.");
+  }
+}
+
+// زر اختيار صورة من المعرض
+$("chooseGallery").onclick = () => {
+  $("productImageGallery").click();
+};
+
+// زر التصوير بالكاميرا
+$("takeProductPhoto").onclick = () => {
+  $("productImageCamera").click();
+};
+
+// استقبال صورة المعرض
+$("productImageGallery").addEventListener("change", event => {
+  handleProductImage(event.target.files[0]);
+  event.target.value = "";
+});
+
+// استقبال صورة الكاميرا
+$("productImageCamera").addEventListener("change", event => {
+  handleProductImage(event.target.files[0]);
+  event.target.value = "";
+});
+
+// إزالة الصورة المختارة
+$("removeProductImage").onclick = () => {
+  selectedProductImage = "";
+
+  $("productImagePreview").src = "";
+  $("productImagePreview").classList.add("hidden");
+  $("removeProductImage").classList.add("hidden");
+};
+
+// ==================================
+// إضافة منتج جديد بالصورة
+// ==================================
 
 $("addProduct").onclick = async () => {
   const name = $("newName").value.trim();
   const price = Number($("newPrice").value);
   const category = $("newCategory").value.trim();
-  const image = $("newImage").value.trim();
 
   if (
     !name ||
@@ -692,35 +793,47 @@ $("addProduct").onclick = async () => {
     return alert("Firebase غير مربوط.");
   }
 
+  const button = $("addProduct");
+  button.disabled = true;
+  button.textContent = "جاري إضافة المنتج...";
+
   try {
     await db.collection("products").add({
       name,
       price,
       category,
-      image,
+      image: selectedProductImage,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     $("newName").value = "";
     $("newPrice").value = "";
     $("newCategory").value = "";
-    $("newImage").value = "";
+
+    selectedProductImage = "";
+
+    $("productImagePreview").src = "";
+    $("productImagePreview").classList.add("hidden");
+    $("removeProductImage").classList.add("hidden");
 
     await loadCloud();
 
-    $("adminMsg").textContent = "تمت إضافة المنتج.";
+    $("adminMsg").textContent = "تمت إضافة المنتج بالصورة بنجاح.";
 
   } catch (error) {
-    console.error(error);
-
+    console.error("Add product error:", error);
     $("adminMsg").textContent =
       "تعذر إضافة المنتج: " + error.message;
+
+  } finally {
+    button.disabled = false;
+    button.textContent = "+ إضافة المنتج";
   }
 };
 
-// ==============================
+// ==================================
 // عرض المنتجات في الإدارة
-// ==============================
+// ==================================
 
 function renderAdminProducts() {
   $("adminProducts").innerHTML =
@@ -735,7 +848,8 @@ function renderAdminProducts() {
 
               <button
                 class="link"
-                data-delete="${esc(product.id)}">
+                data-delete="${esc(product.id)}"
+                type="button">
                 حذف
               </button>
             </div>
@@ -744,7 +858,10 @@ function renderAdminProducts() {
     );
 }
 
+// ==================================
 // حذف منتج
+// ==================================
+
 $("adminProducts").addEventListener("click", async event => {
   const button = event.target.closest("[data-delete]");
   if (!button) return;
@@ -762,15 +879,13 @@ $("adminProducts").addEventListener("click", async event => {
 
   } catch (error) {
     console.error(error);
-
-    $("adminMsg").textContent =
-      "تعذر حذف المنتج.";
+    $("adminMsg").textContent = "تعذر حذف المنتج.";
   }
 });
 
-// ==============================
+// ==================================
 // تغيير بيانات دخول الإدارة
-// ==============================
+// ==================================
 
 $("updateCredentials").onclick = async () => {
   if (!auth || !auth.currentUser) {
@@ -821,9 +936,9 @@ $("updateCredentials").onclick = async () => {
   }
 };
 
-// ==============================
+// ==================================
 // بداية تشغيل الموقع
-// ==============================
+// ==================================
 
 $("year").textContent = new Date().getFullYear();
 
