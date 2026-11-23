@@ -233,7 +233,9 @@ function closeModal(id) { $(id)?.classList.add("hidden"); }
 
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-close]");
-  if (b) closeModal(b.dataset.close);
+  if (!b) return;
+  if (b.dataset.close === "adminModal") closeAdminAndLogout();
+  else closeModal(b.dataset.close);
 });
 
 // ==========================================
@@ -334,18 +336,29 @@ function showAdminTab(id) {
 }
 
 if ($("openAdmin")) {
-  $("openAdmin").addEventListener("click", () => {
+  $("openAdmin").addEventListener("click", async () => {
+    // كل مرة: تسجيل خروج ثم طلب البريد وكلمة المرور من جديد
+    orders = [];
+    if ($("adminEmail")) $("adminEmail").value = "";
+    if ($("adminPassword")) $("adminPassword").value = "";
+    showMessage("loginMsg", "");
+    showMessage("adminMsg", "");
+    $("adminPane")?.classList.add("hidden");
+    $("loginPane")?.classList.remove("hidden");
     openModal("adminModal");
-    showAdminPane();
-    if (isAdmin()) {
-      showAdminTab("tabSales");
-      loadCloud();
+
+    try {
+      if (auth && auth.currentUser) await auth.signOut();
+    } catch (e) {
+      console.error(e);
     }
+    $("adminPane")?.classList.add("hidden");
+    $("loginPane")?.classList.remove("hidden");
   });
 }
 
 if ($("closeAdmin")) {
-  $("closeAdmin").addEventListener("click", () => closeModal("adminModal"));
+  $("closeAdmin").addEventListener("click", closeAdminAndLogout);
 }
 
 document.addEventListener("click", e => {
