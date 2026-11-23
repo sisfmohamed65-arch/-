@@ -1,6 +1,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
+/* =================================
+   1. الألوان والإعدادات العامة
+================================= */
+
 :root {
   --green: #176b45;
   --deep: #104b34;
@@ -11,6 +15,7 @@
   --muted: #78847d;
   --border: #e8ece7;
   --shadow: 0 12px 35px rgba(16, 75, 52, .09);
+  --radius: 16px;
 }
 
 * {
@@ -31,12 +36,20 @@ body {
   line-height: 1.7;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
 }
 
 a {
@@ -50,10 +63,26 @@ img {
 
 .wrap {
   width: min(1150px, 92%);
-  margin: auto;
+  margin-inline: auto;
 }
 
-/* Header */
+.hidden {
+  display: none !important;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 7px;
+}
+
+/* =================================
+   2. رأس الموقع
+================================= */
 
 .top {
   background: var(--white);
@@ -71,7 +100,7 @@ img {
   gap: 18px;
 }
 
-.brand, .footer-brand {
+.brand {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -80,41 +109,27 @@ img {
   font-size: 21px;
 }
 
-.mark {
-  width: 46px;
-  height: 46px;
-  border-radius: 15px;
-  background: linear-gradient(135deg, var(--green), var(--deep));
-  color: white;
-  display: grid;
-  place-items: center;
-  font-size: 23px;
-  box-shadow: 0 6px 15px #176b4530;
-}
-
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.cart-link {
-  border: 1px solid var(--border);
-  background: var(--cream);
-  border-radius: 12px;
-  padding: 9px 16px;
-  color: var(--deep);
-  font-weight: 800;
-}
+/* =================================
+   3. الأزرار
+================================= */
 
-/* Buttons */
-
-.primary, .secondary {
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 12px;
   padding: 11px 20px;
   font-weight: 800;
-  transition: .2s;
+  transition: .2s ease;
+  text-align: center;
 }
 
 .primary {
@@ -143,42 +158,34 @@ img {
   font-weight: 800;
   border: 0;
   background: transparent;
+  padding: 8px;
 }
 
 .full {
   width: 100%;
 }
 
-.muted {
-  color: var(--muted);
-}
-
-.hint {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 7px;
-}
-
-/* Hero */
+/* =================================
+   4. الواجهة الرئيسية
+================================= */
 
 .hero {
   margin: 28px auto;
-  padding: 45px;
+  width: min(1150px, 92%);
+  padding: 50px 35px;
   border-radius: 26px;
   background: linear-gradient(120deg, #104b34, #176b45);
   color: white;
-  display: grid;
-  grid-template-columns: 1.3fr .7fr;
+  display: flex;
   align-items: center;
-  gap: 25px;
+  justify-content: center;
+  text-align: center;
+  min-height: 260px;
   overflow: hidden;
-  position: relative;
 }
 
-.eyebrow {
-  color: var(--gold);
-  font-weight: 800;
-  margin-bottom: 12px;
+.hero-content {
+  max-width: 750px;
 }
 
 .hero h1 {
@@ -190,14 +197,7 @@ img {
 
 .hero p {
   color: #e0eee5;
-  max-width: 600px;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 23px;
+  margin-bottom: 22px;
 }
 
 .hero .primary {
@@ -205,40 +205,9 @@ img {
   color: #26372d;
 }
 
-.hero-points {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 25px;
-  color: #e8f2eb;
-  font-size: 14px;
-}
-
-.hero-art {
-  display: grid;
-  place-items: center;
-  min-height: 220px;
-}
-
-.hero-circle {
-  width: 210px;
-  height: 210px;
-  border-radius: 50%;
-  background: #ffffff18;
-  border: 2px solid #ffffff35;
-  display: grid;
-  place-items: center;
-  font-size: 90px;
-  box-shadow: 0 0 0 20px #ffffff0a;
-}
-
-.hero-label {
-  color: var(--gold);
-  font-weight: 900;
-  margin-top: 12px;
-}
-
-/* Features */
+/* =================================
+   5. مميزات المتجر
+================================= */
 
 .features {
   display: grid;
@@ -247,69 +216,58 @@ img {
   margin: 25px auto 45px;
 }
 
-.feature-card {
+.feature {
   background: white;
   border: 1px solid var(--border);
   border-radius: 17px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  padding: 22px;
   box-shadow: var(--shadow);
+  text-align: center;
 }
 
-.feature-icon {
-  width: 45px;
-  height: 45px;
-  flex-shrink: 0;
-  border-radius: 13px;
-  background: #edf5ef;
-  display: grid;
-  place-items: center;
-  color: var(--green);
-  font-size: 22px;
-}
-
-/* Store */
-
-.store-section {
-  padding: 25px 0 55px;
-}
-
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.section-head h2 {
+.feature h3 {
   color: var(--deep);
-  font-size: 27px;
-  font-weight: 900;
+  margin-bottom: 8px;
 }
 
-.section-description {
+.feature p {
   color: var(--muted);
   font-size: 14px;
 }
 
-.search-box {
-  width: min(320px, 100%);
+/* =================================
+   6. الأقسام والبحث
+================================= */
+
+.section {
+  padding: 25px 0 45px;
 }
 
-.search-box input {
+.section-title {
+  color: var(--deep);
+  font-size: 27px;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+#search {
   width: 100%;
-  padding: 12px 15px;
+  padding: 13px 16px;
   border: 1px solid var(--border);
   border-radius: 12px;
   outline: none;
   background: white;
 }
 
-.search-box input:focus,
+#search:focus,
 input:focus,
 textarea:focus,
 select:focus {
@@ -318,11 +276,11 @@ select:focus {
   outline: none;
 }
 
-.category-area {
-  margin: 20px 0;
-}
+/* =================================
+   7. أزرار الأقسام
+================================= */
 
-.chips {
+#categories {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
@@ -337,13 +295,16 @@ select:focus {
   font-weight: 700;
 }
 
-.chip.active, .chip:hover {
+.chip.active,
+.chip:hover {
   background: var(--green);
   color: white;
   border-color: var(--green);
 }
 
-/* Products */
+/* =================================
+   8. المنتجات
+================================= */
 
 .products {
   display: grid;
@@ -357,7 +318,7 @@ select:focus {
   border-radius: 18px;
   padding: 13px;
   overflow: hidden;
-  transition: .2s;
+  transition: .2s ease;
   box-shadow: 0 5px 18px #20352b08;
 }
 
@@ -402,20 +363,16 @@ select:focus {
   margin-top: 10px;
 }
 
-/* Cart */
+/* =================================
+   9. سلة المشتريات
+================================= */
 
-.panel {
+.cart {
   background: white;
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 20px;
+  padding: 22px;
   box-shadow: var(--shadow);
-  margin: 20px 0;
-}
-
-.cart-items {
-  display: grid;
-  gap: 12px;
 }
 
 .cart-row {
@@ -434,8 +391,8 @@ select:focus {
 }
 
 .qty button {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--border);
   background: #f5f7f4;
   border-radius: 8px;
@@ -443,60 +400,59 @@ select:focus {
   font-weight: 900;
 }
 
-.cart-bottom {
+.cart-total {
   border-top: 1px solid var(--border);
   padding-top: 15px;
   margin-top: 15px;
-  display: grid;
-  gap: 12px;
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--deep);
 }
 
-/* Footer */
+/* =================================
+   10. الفوتر
+================================= */
 
-.site-footer {
+footer {
   background: #103f2d;
   color: white;
-  padding: 35px 0 15px;
+  padding: 35px 0 20px;
   margin-top: 45px;
-}
-
-.site-footer p {
-  color: #d5e3d9;
-}
-
-.footer-brand {
-  color: white;
-  margin-bottom: 12px;
-}
-
-.footer-bottom {
-  border-top: 1px solid #ffffff25;
-  margin-top: 25px;
-  padding-top: 15px;
   text-align: center;
-  color: #d5e3d9;
-  font-size: 13px;
 }
 
-/* Modals */
+footer h3 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+footer p {
+  color: #d5e3d9;
+  margin-top: 7px;
+}
+
+/* =================================
+   11. النوافذ المنبثقة
+================================= */
 
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 9999;
   background: #10251dcc;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 15px;
   overflow-y: auto;
 }
 
-.modal.show {
-  display: flex;
+.modal.hidden {
+  display: none !important;
 }
 
-.dialog {
+.modal-content {
+  position: relative;
   background: white;
   width: min(500px, 100%);
   max-height: 92vh;
@@ -504,44 +460,96 @@ select:focus {
   border-radius: 20px;
   padding: 25px;
   box-shadow: 0 20px 70px #0003;
+  margin: auto;
 }
 
-.admin-dialog {
-  width: min(900px, 100%);
-}
-
-.dialog h2 {
+.modal-content h2 {
   color: var(--deep);
   margin-bottom: 18px;
 }
 
-/* Forms */
+.modal-content.admin-panel {
+  width: min(900px, 100%);
+}
 
-.dialog input,
-.dialog select,
-.dialog textarea,
+.close {
+  float: left;
+  border: 0;
+  background: #f1f5f1;
+  color: var(--deep);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* =================================
+   12. النماذج وحقول الإدخال
+================================= */
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 700;
+  color: var(--deep);
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea,
 .admin-section input,
 .admin-section select,
 .admin-section textarea {
+  display: block;
   width: 100%;
   padding: 11px 13px;
-  margin: 7px 0 13px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: white;
   color: var(--ink);
+  outline: none;
 }
 
-.dialog label,
-.admin-section label {
-  display: block;
-  font-weight: 700;
+.form-group textarea {
+  min-height: 95px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.admin-section input:focus {
+  border-color: var(--green);
+}
+
+/* =================================
+   13. لوحة الإدارة
+================================= */
+
+.admin-section {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 18px;
+  margin: 18px 0;
+}
+
+.admin-section h3 {
   color: var(--deep);
+  margin-bottom: 12px;
 }
 
-/* Admin */
+.admin-panel .toolbar {
+  justify-content: flex-start;
+}
 
-.admin-stats {
+.stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
@@ -567,25 +575,21 @@ select:focus {
   font-size: 13px;
 }
 
-.admin-section {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  padding: 18px;
-  margin: 18px 0;
-}
-
-.admin-section h3 {
-  color: var(--deep);
-  margin-bottom: 12px;
-}
-
-.admin-order, .admin-product {
+.admin-order,
+.admin-product {
   background: #fafbf8;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
   margin: 10px 0;
+}
+
+.admin-order p {
+  margin: 5px 0;
+}
+
+.admin-order ul {
+  padding-right: 22px;
 }
 
 .order-actions {
@@ -594,6 +598,17 @@ select:focus {
   gap: 8px;
   margin-top: 12px;
 }
+
+.admin-product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* =================================
+   14. رفع صور المنتجات
+================================= */
 
 .image-upload {
   border: 2px dashed #b8cdbd;
@@ -604,6 +619,13 @@ select:focus {
   margin: 12px 0;
 }
 
+.image-upload > label {
+  display: block;
+  font-weight: 800;
+  color: var(--deep);
+  margin-bottom: 10px;
+}
+
 .image-upload-buttons {
   display: flex;
   justify-content: center;
@@ -612,68 +634,89 @@ select:focus {
   margin-top: 12px;
 }
 
-.product-image-preview {
-  width: 150px;
-  height: 130px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin: 12px auto;
-  display: block;
+.image-upload-buttons button {
+  min-height: 45px;
 }
 
-/* Responsive */
+.product-image-preview {
+  width: 180px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 15px auto;
+  display: block;
+  border: 2px solid var(--border);
+  background: #f1f5f1;
+}
+
+.product-image-preview.hidden {
+  display: none !important;
+}
+
+#removeProductImage {
+  margin: 5px auto;
+}
+
+/* =================================
+   15. التوافق مع الأجهزة اللوحية
+================================= */
 
 @media (max-width: 850px) {
   .products {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .hero {
-    padding: 30px;
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .admin-stats {
-    grid-template-columns: repeat(2, 1fr);
+  .hero {
+    padding: 35px 25px;
   }
 }
 
+/* =================================
+   16. التوافق مع الموبايل
+================================= */
+
 @media (max-width: 600px) {
+  .wrap {
+    width: 94%;
+  }
+
   .nav {
     min-height: 68px;
+    gap: 8px;
   }
 
   .brand {
-    font-size: 17px;
+    font-size: 16px;
   }
 
-  .mark {
-    width: 40px;
-    height: 40px;
+  .nav-actions {
+    gap: 6px;
+  }
+
+  .nav-actions button,
+  .nav-actions a {
+    padding: 9px 10px;
+    font-size: 12px;
   }
 
   .hero {
-    grid-template-columns: 1fr;
-    padding: 25px 20px;
-    text-align: center;
+    width: 94%;
+    padding: 30px 18px;
+    margin: 18px auto;
+    min-height: 220px;
   }
 
-  .hero-actions,
-  .hero-points {
-    justify-content: center;
-  }
-
-  .hero-art {
-    min-height: 150px;
-  }
-
-  .hero-circle {
-    width: 145px;
-    height: 145px;
-    font-size: 65px;
+  .hero h1 {
+    font-size: 27px;
   }
 
   .features {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .products {
@@ -690,25 +733,89 @@ select:focus {
     height: 135px;
   }
 
-  .section-head {
-    align-items: stretch;
+  .product h3 {
+    font-size: 14px;
   }
 
-  .search-box {
+  .price {
+    font-size: 16px;
+  }
+
+  .section-title {
+    font-size: 23px;
+  }
+
+  .modal {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .modal-content {
+    width: 100%;
+    padding: 16px;
+    margin: 8px auto;
+    max-height: calc(100vh - 16px);
+  }
+
+  .modal-content.admin-panel {
     width: 100%;
   }
 
-  .dialog {
-    padding: 18px;
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .image-upload {
+    padding: 13px;
+  }
+
+  .image-upload-buttons {
+    flex-direction: column;
+  }
+
+  .image-upload-buttons button {
+    width: 100%;
+  }
+
+  .product-image-preview {
+    width: 160px;
+    height: 135px;
+  }
+
+  .cart {
+    padding: 15px;
+  }
+
+  .cart-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-product {
+    align-items: flex-start;
   }
 }
+
+/* =================================
+   17. الشاشات الصغيرة جدًا
+================================= */
 
 @media (max-width: 360px) {
   .products {
     grid-template-columns: 1fr;
   }
 
-  .admin-stats {
+  .stats {
     grid-template-columns: 1fr;
+  }
+
+  .brand {
+    font-size: 14px;
+  }
+
+  .nav-actions button,
+  .nav-actions a {
+    font-size: 11px;
+    padding: 8px;
   }
 }
