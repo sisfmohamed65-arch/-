@@ -1,4 +1,3 @@
-
 const firebaseConfig = {
   apiKey: "AIzaSyBbS1MzPjkiLEagg97OTVCBa-yABqKt1Gg",
   authDomain: "zahret-hama.firebaseapp.com",
@@ -827,123 +826,120 @@ $("addProduct").onclick = async () => {
 
   } finally {
     button.disabled = false;
-    button.textContent = "+ إضافة المنتج";
+    button.textContent = "إضافة المنتج";
   }
 };
 
 // ==================================
-// عرض المنتجات في الإدارة
+// عرض المنتجات داخل لوحة الإدارة
 // ==================================
 
 function renderAdminProducts() {
-  $("adminProducts").innerHTML =
-    "<h3>المنتجات الحالية</h3>" +
-    (
-      products.length
-        ? products.map(product => `
-            <div class="admin-product">
-              <span>
-                ${esc(product.name)} — ${money(product.price)} جنيه
-              </span>
+  if (!products.length) {
+    $("adminProducts").innerHTML =
+      '<p class="muted">لا توجد منتجات حاليًا.</p>';
+    return;
+  }
 
-              <button
-                class="link"
-                data-delete="${esc(product.id)}"
-                type="button">
-                حذف
-              </button>
-            </div>
-          `).join("")
-        : '<p class="muted">لا توجد منتجات.</p>'
-    );
+  $("adminProducts").innerHTML = products.map(product => `
+    <div class="admin-product">
+      <div>
+        <strong>${esc(product.name)}</strong>
+        <p>${money(product.price)} جنيه — ${esc(product.category)}</p>
+      </div>
+
+      <button
+        class="link"
+        type="button"
+        data-delete-product="${esc(product.id)}">
+        حذف المنتج
+      </button>
+    </div>
+  `).join("");
 }
 
 // ==================================
-// حذف منتج
+// حذف المنتجات
 // ==================================
 
 $("adminProducts").addEventListener("click", async event => {
-  const button = event.target.closest("[data-delete]");
+  const button = event.target.closest("[data-delete-product]");
   if (!button) return;
 
-  if (!confirm("متأكد من حذف المنتج؟")) return;
+  const id = button.dataset.deleteProduct;
+
+  if (!confirm("هل تريد حذف هذا المنتج؟")) return;
 
   try {
-    await db.collection("products")
-      .doc(button.dataset.delete)
-      .delete();
+    await db.collection("products").doc(id).delete();
+
+    delete cart[id];
 
     await loadCloud();
 
     $("adminMsg").textContent = "تم حذف المنتج.";
 
   } catch (error) {
-    console.error(error);
-    $("adminMsg").textContent = "تعذر حذف المنتج.";
+    console.error("Delete product error:", error);
+    $("adminMsg").textContent = "تعذر حذف المنتج: " + error.message;
   }
 });
 
 // ==================================
-// تغيير بيانات دخول الإدارة
+// تحديث بيانات دخول الإدارة
 // ==================================
 
-$("updateCredentials").onclick = async () => {
+$("updateAdminCredentials").onclick = async () => {
   if (!auth || !auth.currentUser) {
-    return alert("سجّل دخول الإدارة أولاً.");
+    return alert("سجّل دخول الإدارة أولًا.");
   }
 
-  if (auth.currentUser.uid !== ADMIN_UID) {
-    return alert("هذا الحساب ليس حساب الإدارة.");
-  }
+  const newEmail = $("newAdminEmail").value.trim();
+  const newPassword = $("newAdminPassword").value;
 
-  const email = $("newAdminEmail").value.trim();
-  const password = $("newAdminPassword").value;
-
-  if (!email && !password) {
-    return alert("اكتب الإيميل الجديد أو كلمة السر الجديدة.");
-  }
-
-  if (password && password.length < 8) {
-    return alert("كلمة السر لازم تكون 8 أحرف على الأقل.");
+  if (!newEmail && !newPassword) {
+    return alert("اكتب البريد الجديد أو كلمة المرور الجديدة.");
   }
 
   try {
-    const user = auth.currentUser;
-
-    if (email) {
-      if (typeof user.verifyBeforeUpdateEmail === "function") {
-        await user.verifyBeforeUpdateEmail(email);
-      } else {
-        await user.updateEmail(email);
-      }
+    if (newEmail) {
+      await auth.currentUser.updateEmail(newEmail);
     }
 
-    if (password) {
-      await user.updatePassword(password);
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        return alert("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+      }
+
+      await auth.currentUser.updatePassword(newPassword);
     }
 
     $("newAdminEmail").value = "";
     $("newAdminPassword").value = "";
 
     $("adminMsg").textContent =
-      "تم تنفيذ تحديث بيانات الدخول. قد تحتاج لتأكيد البريد أو تسجيل الدخول مجددًا.";
+      "تم تحديث بيانات الدخول بنجاح.";
 
   } catch (error) {
-    console.error(error);
+    console.error("Credentials update error:", error);
 
     $("adminMsg").textContent =
-      "تعذر تحديث البيانات. قد تحتاج إلى تسجيل الدخول من جديد.";
+      "تعذر تحديث البيانات. قد تحتاج إلى تسجيل الدخول مرة أخرى.";
   }
 };
 
 // ==================================
-// بداية تشغيل الموقع
+// تشغيل المتجر
 // ==================================
 
-$("year").textContent = new Date().getFullYear();
+async function startStore() {
+  if (!firebaseReady) {
+    $("products").innerHTML =
+      '<p class="muted">تعذر الاتصال بقاعدة البيانات.</p>';
+    return;
+  }
 
-render();
-
-if (firebaseReady) {
-  loadStoreData();
+  await loadStoreData();
 }
+
+startStore();
