@@ -1,11 +1,10 @@
 
-/* =====================================================
-   زهرة حماة - التطبيق الرئيسي الكامل
-   Firebase + Store + Cart + Orders + Admin + Reports
-===================================================== */
+// ==========================================
+// زهرة حماة - التطبيق الرئيسي الكامل
+// Firebase + المتجر + الإدارة + التقارير
+// ==========================================
 
-// ================= إعدادات Firebase =================
-
+// 1) إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBbS1MzPjkiLEagg97OTVCBa-yABqKt1Gg",
   authDomain: "zahret-hama.firebaseapp.com",
@@ -17,34 +16,37 @@ const firebaseConfig = {
 
 const ADMIN_UID = "bw9BjGepH9Z04LZ361DLc02QzEl2";
 
-// ================= المتغيرات العامة =================
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-let db = null;
-let auth = null;
-let firebaseReady = false;
+const auth = firebase.auth();
+const db = firebase.firestore();
 
+// 2) متغيرات المتجر
+let adminSessionActive = false;
 let products = [];
 let orders = [];
+let settings = {};
 let cart = [];
-
-let settings = {
-  storeName: "زهرة حماة",
-  whatsapp: "",
-  facebook: "",
-  messenger: ""
-};
-
+let selectedImage = "";
 let activeCategory = "الكل";
-let selectedProductImage = "";
-let adminSessionActive = false;
-let selectedReportMonth = "";
-
-// ================= أدوات مساعدة =================
 
 const $ = id => document.getElementById(id);
 
+try {
+  cart = JSON.parse(localStorage.getItem("zahretHamaCart") || "[]");
+  if (!Array.isArray(cart)) cart = [];
+} catch {
+  cart = [];
+}
+
+// ==========================================
+// 3) أدوات مساعدة
+// ==========================================
+
 function money(value) {
-  return Number(value || 0).toLocaleString("ar-EG") + " ج.م";
+  return (Number(value) || 0).toLocaleString("ar-EG");
 }
 
 function esc(value) {
@@ -53,225 +55,385 @@ function esc(value) {
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#039;"
+    "'": "&#39;"
   })[char]);
 }
 
-function showMessage(id, message) {
+function showMessage(id, message, type = "info") {
   const element = $(id);
   if (!element) return;
 
   element.textContent = message;
-  element.classList.remove("hidden");
+  element.style.display = "block";
+  element.style.color =
+    type === "error" ? "#b42318" :
+    type === "success" ? "#16803c" : "";
 
-  clearTimeout(element._messageTimer);
-  element._messageTimer = setTimeout(() => {
-    element.classList.add("hidden");
-  }, 4500);
+  element.setAttribute("role", "status");
 }
 
-function setButtonLoading(button, loading, normalText) {
+function setLoading(button, loading, text) {
   if (!button) return;
-  button.disabled = loading;
-  button.textContent = loading ? "جارٍ التنفيذ..." : normalText;
+
+  if (loading) {
+    button.dataset.originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = text || "جاري التنفيذ...";
+  } else {
+    button.disabled = false;
+    button.textContent = button.dataset.originalText || text || "حفظ";
+  }
 }
 
 function isAdmin() {
-  return Boolean(
+  return !!(
     adminSessionActive &&
-    auth &&
     auth.currentUser &&
     auth.currentUser.uid === ADMIN_UID
   );
 }
 
-function getOrderDate(order) {
-  const value = order.createdAt;
-
-  if (value && typeof value.toDate === "function") {
-    return value.toDate();
-  }
-
-  if (value && value.seconds) {
-    return new Date(value.seconds * 1000);
-  }
-
-  if (value) {
-    const date = new Date(value);
-    if (!isNaN(date.getTime())) return date;
-  }
-
-  return new Date(0);
-}
-
-function getOrderStatus(order) {
-  return order.status || "new";
-}
-
-function formatDate(date) {
-  if (!date || isNaN(date.getTime())) return "غير محدد";
-
-  return date.toLocaleDateString("ar-EG", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
-}
-
-// ================= تشغيل Firebase =================
-
-try {
-  if (!window.firebase) {
-    throw new Error("Firebase SDK غير موجود.");
-  }
-
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-
-  db = firebase.firestore();
-  auth = firebase.auth();
-  firebaseReady = true;
-
-} catch (error) {
-  console.error("Firebase initialization error:", error);
-  firebaseReady = false;
-}
-
-// ================= النوافذ =================
-
-function openModal(id) {
-  $(id)?.classList.remove("hidden");
+function saveCart() {
+  localStorage.setItem("zahretHamaCart", JSON.stringify(cart));
+  renderCart();
 }
 
 function closeModal(id) {
   $(id)?.classList.add("hidden");
 }
 
-function resetAdminLogin() {
-  if ($("adminEmail")) $("adminEmail").value = "";
-  if ($("adminPassword")) $("adminPassword").value = "";
+// ==========================================
+// 4) اسم المتجر والإعدادات
+// ==========================================
+
+function applyStoreName(name) {
+  const storeName = String(name || "زهرة حماة").trim() || "زهرة حماة";
+
+  if ($("storeTitle")) $("storeTitle").textContent = storeName;
+  if ($("footerName")) $("footerName").textContent = storeName;
+  if ($("footerNameBottom")) $("footerNameBottom").textContent = storeName;
+
+  const adminHeading = document.querySelector("#adminModal h2");
+  if (adminHeading) adminHeading.textContent = "لوحة إدارة " + storeName;
+
+  document.title = storeName + " | المتجر";
+
+  const heroHeading = document.querySelector(".hero h1");
+  if (heroHeading) {
+    heroHeading.textContent = "أهلاً بيكم في " + storeName + " 🌿";
+  }
+}
+
+async function loadSettings() {
+  try {
+    const doc = await db.collection("settings").doc("main").get();
+    settings = doc.exists ? doc.data() : {};
+
+    applyStoreName(settings.storeName || "زهرة حماة");
+
+    if ($("editStoreName")) {
+      $("editStoreName").value = settings.storeName || "زهرة حماة";
+    }
+
+    if ($("editWhatsapp")) {
+      $("editWhatsapp").value = settings.whatsapp || "";
+    }
+
+    if ($("editFacebook")) {
+      $("editFacebook").value = settings.facebook || "";
+    }
+
+    if ($("editMessenger")) {
+      $("editMessenger").value = settings.messenger || "";
+    }
+  } catch (error) {
+    console.error("Settings load:", error);
+  }
+}
+
+// حفظ اسم المتجر
+$("saveStoreName")?.addEventListener("click", async function () {
+  if (!isAdmin()) {
+    showMessage("adminMsg", "يجب تسجيل الدخول للإدارة أولاً.", "error");
+    return;
+  }
+
+  const name = $("editStoreName")?.value.trim();
+
+  if (!name) {
+    showMessage("adminMsg", "اكتب اسم المتجر أولاً.", "error");
+    return;
+  }
+
+  setLoading(this, true, "جاري حفظ الاسم...");
+
+  try {
+    await db.collection("settings").doc("main").set({
+      storeName: name,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    settings.storeName = name;
+    applyStoreName(name);
+
+    showMessage("adminMsg", "تم تغيير اسم المتجر وحفظه بنجاح.", "success");
+  } catch (error) {
+    console.error(error);
+    showMessage("adminMsg", "لم يتم حفظ الاسم. تأكد من صلاحيات Firebase والاتصال.", "error");
+  } finally {
+    setLoading(this, false);
+  }
+});
+
+// حفظ وسائل التواصل
+$("saveSettings")?.addEventListener("click", async function () {
+  if (!isAdmin()) {
+    showMessage("adminMsg", "غير مصرح لك بتعديل الإعدادات.", "error");
+    return;
+  }
+
+  const whatsapp = $("editWhatsapp")?.value.trim() || "";
+  const facebook = $("editFacebook")?.value.trim() || "";
+  const messenger = $("editMessenger")?.value.trim() || "";
+
+  setLoading(this, true, "جاري الحفظ...");
+
+  try {
+    await db.collection("settings").doc("main").set({
+      whatsapp,
+      facebook,
+      messenger,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    settings = { ...settings, whatsapp, facebook, messenger };
+    showMessage("adminMsg", "تم حفظ وسائل التواصل بنجاح.", "success");
+  } catch (error) {
+    console.error(error);
+    showMessage("adminMsg", "تعذر حفظ وسائل التواصل.", "error");
+  } finally {
+    setLoading(this, false);
+  }
+});
+
+// ==========================================
+// 5) تسجيل دخول الإدارة
+// ==========================================
+
+async function openAdminLogin() {
+  $("adminModal")?.classList.remove("hidden");
+
+  if (isAdmin()) {
+    $("loginPane")?.classList.add("hidden");
+    $("adminPane")?.classList.remove("hidden");
+    return;
+  }
 
   $("loginPane")?.classList.remove("hidden");
   $("adminPane")?.classList.add("hidden");
+
+  if ($("adminEmail")) $("adminEmail").value = "";
+  if ($("adminPassword")) $("adminPassword").value = "";
 }
 
-async function openAdminLogin() {
-  adminSessionActive = false;
+$("openAdmin")?.addEventListener("click", openAdminLogin);
 
-  if (auth?.currentUser) {
-    try {
-      await auth.signOut();
-    } catch (error) {
-      console.error(error);
-    }
+$("closeAdmin")?.addEventListener("click", () => closeModal("adminModal"));
+
+$("adminLogin")?.addEventListener("click", async function () {
+  const email = $("adminEmail")?.value.trim();
+  const password = $("adminPassword")?.value;
+  
+  if (!email || !password) {
+    showMessage("loginMsg", "اكتب البريد الإلكتروني وكلمة المرور.", "error");
+    return;
   }
 
-  resetAdminLogin();
-  openModal("adminModal");
-}
+  setLoading(this, true, "جاري تسجيل الدخول...");
 
-async function closeAdminAndLogout() {
+  try {
+    const result = await auth.signInWithEmailAndPassword(email, password);
+
+    if (result.user.uid !== ADMIN_UID) {
+      await auth.signOut();
+      adminSessionActive = false;
+      showMessage("loginMsg", "هذا الحساب غير مصرح له بدخول الإدارة.", "error");
+      return;
+    }
+
+    adminSessionActive = true;
+
+    $("adminEmail").value = "";
+    $("adminPassword").value = "";
+
+    $("loginPane")?.classList.add("hidden");
+    $("adminPane")?.classList.remove("hidden");
+
+    await loadCloud();
+    await loadSettings();
+
+    showMessage("adminMsg", "تم تسجيل الدخول بنجاح.", "success");
+  } catch (error) {
+    console.error("Admin login:", error);
+    adminSessionActive = false;
+    showMessage("loginMsg", "تعذر تسجيل الدخول. راجع البريد وكلمة المرور.", "error");
+  } finally {
+    setLoading(this, false);
+  }
+});
+
+// تسجيل الخروج
+$("logout")?.addEventListener("click", async function () {
   adminSessionActive = false;
 
   try {
-    if (auth?.currentUser) {
-      await auth.signOut();
-    }
+    await auth.signOut();
   } catch (error) {
     console.error(error);
   }
 
+  $("adminPane")?.classList.add("hidden");
+  $("loginPane")?.classList.remove("hidden");
   closeModal("adminModal");
-  resetAdminLogin();
-}
-
-// ================= تبويبات الإدارة =================
-
-function showAdminTab(tabId) {
-  document.querySelectorAll(".admin-tab").forEach(tab => {
-    tab.classList.add("hidden");
-  });
-
-  $(tabId)?.classList.remove("hidden");
-
-  document.querySelectorAll("[data-admin-tab]").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.adminTab === tabId
-    );
-  });
-}
-
-document.querySelectorAll("[data-admin-tab]").forEach(button => {
-  button.addEventListener("click", () => {
-    if (!isAdmin()) return;
-    showAdminTab(button.dataset.adminTab);
-  });
 });
 
-// ================= تحميل بيانات المتجر =================
+// ==========================================
+// 6) تحديث البريد وكلمة المرور
+// ==========================================
 
-async function loadStoreData() {
-  if (!firebaseReady) return false;
+$("updateAdminCredentials")?.addEventListener("click", async function () {
+  if (!isAdmin()) {
+    showMessage("adminMsg", "يجب تسجيل الدخول للإدارة أولاً.", "error");
+    return;
+  }
+
+  const newEmail = $("newAdminEmail")?.value.trim() || "";
+  const newPassword = $("newAdminPassword")?.value || "";
+
+  if (!newEmail && !newPassword) {
+    showMessage("adminMsg", "اكتب البريد الجديد أو كلمة المرور الجديدة.", "error");
+    return;
+  }
+
+  if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    showMessage("adminMsg", "صيغة البريد الإلكتروني غير صحيحة.", "error");
+    return;
+  }
+
+  if (newPassword && newPassword.length < 6) {
+    showMessage("adminMsg", "كلمة المرور يجب ألا تقل عن 6 أحرف.", "error");
+    return;
+  }
+
+  const currentPassword = prompt("للتأكيد الأمني، اكتب كلمة مرور الإدارة الحالية:");
+  if (!currentPassword) {
+    showMessage("adminMsg", "تم إلغاء تحديث بيانات الدخول.", "error");
+    return;
+  }
+
+  setLoading(this, true, "جاري تحديث البيانات...");
 
   try {
-    const productSnapshot = await db.collection("products").get();
+    const user = auth.currentUser;
+    const credential = firebase.auth.EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
 
-    products = productSnapshot.docs.map(doc => ({
+    await user.reauthenticateWithCredential(credential);
+
+    // تحديث البريد الإلكتروني أولاً
+    if (newEmail && newEmail !== user.email) {
+      await user.updateEmail(newEmail);
+    }
+
+    // تحديث كلمة المرور
+    if (newPassword) {
+      await user.updatePassword(newPassword);
+    }
+
+    $("newAdminEmail").value = "";
+    $("newAdminPassword").value = "";
+
+    showMessage(
+      "adminMsg",
+      "تم تحديث بيانات دخول الإدارة بنجاح. احتفظ بالبيانات الجديدة في مكان آمن.",
+      "success"
+    );
+
+  } catch (error) {
+    console.error("Credentials update:", error);
+
+    let message = "تعذر تحديث بيانات الدخول.";
+
+    if (error.code === "auth/wrong-password" ||
+        error.code === "auth/invalid-credential") {
+      message = "كلمة المرور الحالية غير صحيحة.";
+    } else if (error.code === "auth/email-already-in-use") {
+      message = "هذا البريد مستخدم بالفعل في حساب آخر.";
+    } else if (error.code === "auth/invalid-email") {
+      message = "البريد الإلكتروني غير صالح.";
+    } else if (error.code === "auth/weak-password") {
+      message = "كلمة المرور الجديدة ضعيفة.";
+    } else if (error.code === "auth/requires-recent-login") {
+      message = "انتهت صلاحية التأكيد. سجل الدخول مرة أخرى ثم حاول.";
+    } else if (error.code === "auth/operation-not-allowed") {
+      message = "تحديث بيانات الدخول غير مفعّل في إعدادات Firebase Authentication.";
+    }
+
+    showMessage("adminMsg", message, "error");
+  } finally {
+    setLoading(this, false);
+  }
+});
+
+// ==========================================
+// 7) تحميل المنتجات
+// ==========================================
+
+async function loadProducts() {
+  try {
+    const snapshot = await db.collection("products").get();
+
+    products = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
 
-    const settingsDoc = await db.collection("settings")
-      .doc("main")
-      .get();
-
-    if (settingsDoc.exists) {
-      settings = {
-        ...settings,
-        ...settingsDoc.data()
-      };
-    }
-
-    renderStoreName();
     renderCategories();
     renderProducts();
-    renderCart();
-
-    return true;
-
+    renderAdminProducts();
   } catch (error) {
-    console.error("Store loading error:", error);
-    showMessage("storeMsg", "تعذر تحميل بيانات المتجر.");
-    return false;
+    console.error("Products load:", error);
+    if ($("products")) {
+      $("products").innerHTML = '<p class="muted">تعذر تحميل المنتجات. حاول تحديث الصفحة.</p>';
+    }
   }
 }
 
-function renderStoreName() {
-  const name = settings.storeName || "زهرة حماة";
-
-  if ($("storeTitle")) $("storeTitle").textContent = name;
-  if ($("footerName")) $("footerName").textContent = name;
-  if ($("footerNameBottom")) {
-    $("footerNameBottom").textContent = name;
-  }
+function productName(product) {
+  return product.name || product.title || "منتج";
 }
 
-// ================= عرض الأقسام =================
+function productPrice(product) {
+  return Number(product.price || 0);
+}
+
+function productImage(product) {
+  return product.image || product.imageUrl || product.photo || "";
+}
 
 function renderCategories() {
   const container = $("categories");
   if (!container) return;
 
-  const categories = [
-    "الكل",
-    ...new Set(products.map(p => p.category).filter(Boolean))
-  ];
+  const categories = ["الكل", ...new Set(
+    products.map(p => p.category).filter(Boolean)
+  )];
 
   container.innerHTML = categories.map(category => `
-    <button
-      class="${activeCategory === category ? "active" : ""}"
+    <button type="button"
+      class="${activeCategory === category ? "primary" : "secondary"}"
       data-category="${esc(category)}">
       ${esc(category)}
     </button>
@@ -286,8 +448,6 @@ function renderCategories() {
   });
 }
 
-// ================= عرض المنتجات =================
-
 function renderProducts() {
   const container = $("products");
   if (!container) return;
@@ -295,436 +455,462 @@ function renderProducts() {
   const search = $("search")?.value.trim().toLowerCase() || "";
 
   const filtered = products.filter(product => {
-    const categoryMatch =
-      activeCategory === "الكل" ||
-      product.category === activeCategory;
+    const matchesCategory =
+      activeCategory === "الكل" || product.category === activeCategory;
 
-    const searchMatch =
-      String(product.name || "").toLowerCase().includes(search);
+    const matchesSearch =
+      productName(product).toLowerCase().includes(search);
 
-    return categoryMatch && searchMatch;
+    return matchesCategory && matchesSearch;
   });
 
   if (!filtered.length) {
-    container.innerHTML = "<p>لا توجد منتجات حالياً.</p>";
+    container.innerHTML = '<p class="muted">لا توجد منتجات مطابقة حالياً.</p>';
     return;
   }
 
-  container.innerHTML = filtered.map(product => `
-    <article class="product-card">
-      ${
-        product.image
-          ? `<img src="${esc(product.image)}" alt="${esc(product.name)}">`
-          : `<div class="product-placeholder">لا توجد صورة</div>`
-      }
+  container.innerHTML = filtered.map(product => {
+    const image = productImage(product);
 
-      <h3>${esc(product.name)}</h3>
-      <p>${esc(product.category || "")}</p>
-      <strong>${money(product.price)}</strong>
-
-      <button data-add-cart="${esc(product.id)}">
-        أضف للسلة
-      </button>
-    </article>
-  `).join("");
+    return `
+      <article class="product-card">
+        ${image
+          ? `<img src="${esc(image)}" alt="${esc(productName(product))}" loading="lazy">`
+          : `<div class="product-placeholder">🛍️</div>`}
+        <div class="product-info">
+          <h3>${esc(productName(product))}</h3>
+          <p>${esc(product.category || "")}</p>
+          <strong>${money(productPrice(product))} جنيه</strong>
+          <button class="primary" type="button" data-add-cart="${esc(product.id)}">
+            أضف للسلة
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
 
   container.querySelectorAll("[data-add-cart]").forEach(button => {
-    button.addEventListener("click", () => {
-      addToCart(button.dataset.addCart);
-    });
+    button.addEventListener("click", () => addToCart(button.dataset.addCart));
   });
 }
 
 $("search")?.addEventListener("input", renderProducts);
 
-// ================= السلة =================
+// ==========================================
+// 8) السلة
+// ==========================================
 
-function addToCart(productId) {
-  const product = products.find(p => p.id === productId);
+function addToCart(id) {
+  const product = products.find(p => p.id === id);
   if (!product) return;
 
-  const existing = cart.find(item => item.id === productId);
+  const existing = cart.find(item => item.id === id);
 
   if (existing) {
-    existing.quantity++;
+    existing.quantity = (Number(existing.quantity) || 1) + 1;
   } else {
     cart.push({
       id: product.id,
-      name: product.name,
-      price: Number(product.price || 0),
-      image: product.image || "",
+      name: productName(product),
+      price: productPrice(product),
       quantity: 1
     });
   }
 
-  renderCart();
+  saveCart();
 }
 
-function changeCartQuantity(productId, amount) {
-  const item = cart.find(p => p.id === productId);
-  if (!item) return;
-
-  item.quantity += amount;
-
-  if (item.quantity <= 0) {
-    cart = cart.filter(p => p.id !== productId);
-  }
-
-  renderCart();
+function cartTotal() {
+  return cart.reduce((sum, item) => {
+    return sum + Number(item.price || 0) * Number(item.quantity || 1);
+  }, 0);
 }
 
 function renderCart() {
   const container = $("cartItems");
-  const totalElement = $("total");
+  const total = cartTotal();
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  if (container) {
+    if (!cart.length) {
+      container.innerHTML = '<p class="muted">السلة لسه فاضية.</p>';
+    } else {
+      container.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <div>
+            <strong>${esc(item.name)}</strong>
+            <p>${money(item.price)} جنيه × ${money(item.quantity)}</p>
+          </div>
+          <div class="cart-item-actions">
+            <button type="button" data-cart-minus="${esc(item.id)}">−</button>
+            <span>${money(item.quantity)}</span>
+            <button type="button" data-cart-plus="${esc(item.id)}">+</button>
+            <button type="button" data-cart-remove="${esc(item.id)}">حذف</button>
+          </div>
+        </div>
+      `).join("");
+    }
 
-  if (totalElement) totalElement.textContent = money(total);
+    container.querySelectorAll("[data-cart-minus]").forEach(button => {
+      button.addEventListener("click", () => changeQuantity(button.dataset.cartMinus, -1));
+    });
+
+    container.querySelectorAll("[data-cart-plus]").forEach(button => {
+      button.addEventListener("click", () => changeQuantity(button.dataset.cartPlus, 1));
+    });
+
+    container.querySelectorAll("[data-cart-remove]").forEach(button => {
+      button.addEventListener("click", () => {
+        cart = cart.filter(item => item.id !== button.dataset.cartRemove);
+        saveCart();
+      });
+    });
+  }
+
+  if ($("total")) $("total").textContent = money(total);
+
   if ($("cartCount")) {
     $("cartCount").textContent = cart.reduce(
-      (sum, item) => sum + item.quantity,
-      0
+      (sum, item) => sum + Number(item.quantity || 1), 0
     );
   }
+}
 
-  if (!container) return;
+function changeQuantity(id, amount) {
+  const item = cart.find(p => p.id === id);
+  if (!item) return;
 
-  if (!cart.length) {
-    container.innerHTML = "<p>السلة فارغة.</p>";
-    return;
+  item.quantity = Number(item.quantity || 1) + amount;
+
+  if (item.quantity <= 0) {
+    cart = cart.filter(p => p.id !== id);
   }
 
-  container.innerHTML = cart.map(item => `
-    <div class="cart-item">
-      <span>${esc(item.name)}</span>
-      <span>${money(item.price * item.quantity)}</span>
-
-      <button data-minus="${esc(item.id)}">−</button>
-      <span>${item.quantity}</span>
-      <button data-plus="${esc(item.id)}">+</button>
-    </div>
-  `).join("");
-
-  container.querySelectorAll("[data-minus]").forEach(button => {
-    button.addEventListener("click", () => {
-      changeCartQuantity(button.dataset.minus, -1);
-    });
-  });
-
-  container.querySelectorAll("[data-plus]").forEach(button => {
-    button.addEventListener("click", () => {
-      changeCartQuantity(button.dataset.plus, 1);
-    });
-  });
+  saveCart();
 }
 
 $("clearCart")?.addEventListener("click", () => {
-  cart = [];
-  renderCart();
+  if (!cart.length) return;
+
+  if (confirm("هل تريد تفريغ السلة؟")) {
+    cart = [];
+    saveCart();
+  }
 });
 
-// ================= الصور =================
+// ==========================================
+// 9) إتمام الطلب
+// ==========================================
 
-function compressImage(file) {
+$("checkout")?.addEventListener("click", () => {
+  if (!cart.length) {
+    alert("السلة فارغة. أضف منتجات أولاً.");
+    return;
+  }
+
+  $("checkoutModal")?.classList.remove("hidden");
+});
+
+$("sendOrder")?.addEventListener("click", async function () {
+  if (!cart.length) {
+    alert("السلة فارغة.");
+    return;
+  }
+
+  const customerName = $("customerName")?.value.trim();
+  const customerPhone = $("customerPhone")?.value.trim();
+  const customerAddress = $("customerAddress")?.value.trim();
+  const contactChannel = $("contactChannel")?.value || "whatsapp";
+
+  if (!customerName || !customerPhone || !customerAddress) {
+    alert("من فضلك اكتب الاسم ورقم الموبايل والعنوان.");
+    return;
+  }
+
+  if (!/^[0-9+\s()-]{8,20}$/.test(customerPhone)) {
+    alert("رقم الموبايل غير صحيح.");
+    return;
+  }
+
+  const orderItems = cart.map(item => ({
+    productId: item.id,
+    name: item.name,
+    price: Number(item.price),
+    quantity: Number(item.quantity)
+  }));
+
+  const total = cartTotal();
+
+  setLoading(this, true, "جاري إرسال الطلب...");
+
+  try {
+    await db.collection("orders").add({
+      customerName,
+      customerPhone,
+      customerAddress,
+      contactChannel,
+      items: orderItems,
+      total,
+      status: "جديد",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    cart = [];
+    saveCart();
+
+    if ($("customerName")) $("customerName").value = "";
+    if ($("customerPhone")) $("customerPhone").value = "";
+    if ($("customerAddress")) $("customerAddress").value = "";
+
+    closeModal("checkoutModal");
+
+    alert("تم إرسال طلبك بنجاح. شكراً لثقتكم بنا.");
+
+  } catch (error) {
+    console.error("Order save:", error);
+    alert("تعذر إرسال الطلب. حاول مرة أخرى أو تواصل مع المتجر.");
+  } finally {
+    setLoading(this, false);
+  }
+});
+
+// ==========================================
+// 10) إدارة المنتجات
+// ==========================================
+
+function renderAdminProducts() {
+  const container = $("adminProducts");
+  if (!container) return;
+
+  if (!products.length) {
+    container.innerHTML = "<p>لا توجد منتجات حالياً.</p>";
+    return;
+  }
+
+  container.innerHTML = products.map(product => `
+    <div class="admin-order">
+      <strong>${esc(productName(product))}</strong>
+      <p>السعر: ${money(productPrice(product))} جنيه</p>
+      <p>القسم: ${esc(product.category || "بدون قسم")}</p>
+      <div class="order-actions">
+        <button type="button" class="secondary" data-edit-product="${esc(product.id)}">تعديل</button>
+        <button type="button" class="secondary" data-delete-product="${esc(product.id)}">حذف</button>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll("[data-edit-product]").forEach(button => {
+    button.addEventListener("click", () => editProduct(button.dataset.editProduct));
+  });
+
+  container.querySelectorAll("[data-delete-product]").forEach(button => {
+    button.addEventListener("click", () => deleteProduct(button.dataset.deleteProduct));
+  });
+}
+
+$("chooseGallery")?.addEventListener("click", () => $("productImageGallery")?.click());
+$("takeProductPhoto")?.addEventListener("click", () => $("productImageCamera")?.click());
+
+async function prepareImage(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    throw new Error("الملف المختار ليس صورة.");
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("حجم الصورة كبير. اختر صورة أقل من 8 ميجابايت.");
+  }
+
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith("image/")) {
-      reject(new Error("الملف المحدد ليس صورة."));
-      return;
-    }
-
     const reader = new FileReader();
 
-    reader.onload = event => {
+    reader.onerror = () => reject(new Error("تعذر قراءة الصورة."));
+
+    reader.onload = () => {
       const image = new Image();
 
+      image.onerror = () => reject(new Error("الصورة غير صالحة."));
       image.onload = () => {
         const canvas = document.createElement("canvas");
+        const maxSize = 1000;
+        const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
 
-        const maxWidth = 900;
-        const scale = Math.min(1, maxWidth / image.width);
-
-        canvas.width = Math.round(image.width * scale);
-        canvas.height = Math.round(image.height * scale);
+        canvas.width = Math.round(image.width * ratio);
+        canvas.height = Math.round(image.height * ratio);
 
         const context = canvas.getContext("2d");
-        context.drawImage(
-          image,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        resolve(canvas.toDataURL("image/jpeg", 0.78));
       };
 
-      image.onerror = reject;
-      image.src = event.target.result;
+      image.src = reader.result;
     };
 
-    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
-function setupImagePicker(inputId) {
-  $(inputId)?.addEventListener("change", async event => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+async function handleImageInput(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    try {
-      selectedProductImage = await compressImage(file);
+  try {
+    selectedImage = await prepareImage(file);
 
-      const preview = $("productImagePreview");
-      if (preview) {
-        preview.src = selectedProductImage;
-        preview.classList.remove("hidden");
-      }
-
-    } catch (error) {
-      console.error(error);
-      showMessage("productMsg", "تعذر تحميل الصورة.");
+    if ($("productImagePreview")) {
+      $("productImagePreview").src = selectedImage;
+      $("productImagePreview").classList.remove("hidden");
     }
-  });
+
+    $("removeProductImage")?.classList.remove("hidden");
+  } catch (error) {
+    alert(error.message);
+  }
+
+  event.target.value = "";
 }
 
-$("chooseGallery")?.addEventListener("click", () => {
-  $("productImageGallery")?.click();
-});
-
-$("takeProductPhoto")?.addEventListener("click", () => {
-  $("productImageCamera")?.click();
-});
-
-setupImagePicker("productImageGallery");
-setupImagePicker("productImageCamera");
+$("productImageGallery")?.addEventListener("change", handleImageInput);
+$("productImageCamera")?.addEventListener("change", handleImageInput);
 
 $("removeProductImage")?.addEventListener("click", () => {
-  selectedProductImage = "";
+  selectedImage = "";
 
   if ($("productImagePreview")) {
     $("productImagePreview").src = "";
     $("productImagePreview").classList.add("hidden");
   }
 
-  if ($("productImageGallery")) $("productImageGallery").value = "";
-  if ($("productImageCamera")) $("productImageCamera").value = "";
+  $("removeProductImage")?.classList.add("hidden");
 });
 
-// ================= إرسال الطلبات =================
+$("addProduct")?.addEventListener("click", async function () {
+  if (!isAdmin()) return;
 
-function getContactLink(channel) {
-  if (channel === "whatsapp" && settings.whatsapp) {
-    const phone = settings.whatsapp.replace(/\D/g, "");
-    return `https://wa.me/${phone}`;
-  }
+  const name = $("newName")?.value.trim();
+  const price = Number($("newPrice")?.value);
+  const category = $("newCategory")?.value.trim();
 
-  if (channel === "messenger" && settings.messenger) {
-    return settings.messenger;
-  }
-
-  if (channel === "facebook" && settings.facebook) {
-    return settings.facebook;
-  }
-
-  return "";
-}
-
-function buildOrderMessage(order) {
-  const lines = [
-    `طلب جديد من ${settings.storeName || "زهرة حماة"}`,
-    `الاسم: ${order.customerName}`,
-    `الهاتف: ${order.phone}`,
-    `العنوان: ${order.address}`,
-    "المنتجات:"
-  ];
-
-  order.items.forEach(item => {
-    lines.push(
-      `${item.name} × ${item.quantity} = ${money(item.price * item.quantity)}`
-    );
-  });
-
-  lines.push(`الإجمالي: ${money(order.total)}`);
-
-  return lines.join("\n");
-}
-
-$("checkout")?.addEventListener("click", () => {
-  if (!cart.length) {
-    alert("السلة فارغة.");
+  if (!name || !Number.isFinite(price) || price < 0 || !category) {
+    alert("اكتب اسم المنتج والسعر والقسم بشكل صحيح.");
     return;
   }
 
-  openModal("checkoutModal");
-});
-
-$("sendOrder")?.addEventListener("click", async function () {
-  if (!firebaseReady) {
-    showMessage("checkoutMsg", "الاتصال بقاعدة البيانات غير متاح.");
-    return;
-  }
-
-  if (!cart.length) {
-    showMessage("checkoutMsg", "السلة فارغة.");
-    return;
-  }
-
-  const customerName = $("customerName")?.value.trim() || "";
-  const phone = $("customerPhone")?.value.trim() || "";
-  const address = $("customerAddress")?.value.trim() || "";
-  const channel = $("contactChannel")?.value || "whatsapp";
-
-  if (!customerName || !phone || !address) {
-    showMessage("checkoutMsg", "أكمل الاسم ورقم الهاتف والعنوان.");
-    return;
-  }
-
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const order = {
-    customerName,
-    phone,
-    address,
-    channel,
-    items: cart.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity
-    })),
-    total,
-    status: "new",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  const button = this;
-  const normalText = button.textContent;
-
-  setButtonLoading(button, true, normalText);
+  setLoading(this, true, "جاري إضافة المنتج...");
 
   try {
-    await db.collection("orders").add(order);
+    await db.collection("products").add({
+      name,
+      price,
+      category,
+      image: selectedImage || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-    const message = buildOrderMessage(order);
-    const contactLink = getContactLink(channel);
+    $("newName").value = "";
+    $("newPrice").value = "";
+    $("newCategory").value = "";
+    selectedImage = "";
 
-    cart = [];
-    renderCart();
-    closeModal("checkoutModal");
+    $("productImagePreview")?.classList.add("hidden");
+    $("removeProductImage")?.classList.add("hidden");
 
-    if (contactLink) {
-      const separator = contactLink.includes("?") ? "&" : "?";
-      const url = channel === "whatsapp"
-        ? `${contactLink}?text=${encodeURIComponent(message)}`
-        : contactLink;
-
-      window.open(url, "_blank", "noopener");
-    } else {
-      alert(message);
-    }
-
-    if ($("customerName")) $("customerName").value = "";
-    if ($("customerPhone")) $("customerPhone").value = "";
-    if ($("customerAddress")) $("customerAddress").value = "";
-
-    alert("تم تسجيل طلبك بنجاح.");
+    await loadProducts();
+    showMessage("adminMsg", "تمت إضافة المنتج بنجاح.", "success");
 
   } catch (error) {
-    console.error("Order error:", error);
-    showMessage("checkoutMsg", "تعذر حفظ الطلب. حاول مرة أخرى.");
+    console.error(error);
+    showMessage("adminMsg", "تعذرت إضافة المنتج. راجع صلاحيات Firebase.", "error");
   } finally {
-    setButtonLoading(button, false, normalText);
+    setLoading(this, false);
   }
 });
 
-// ================= تسجيل دخول الإدارة =================
+async function editProduct(id) {
+  if (!isAdmin()) return;
 
-$("openAdmin")?.addEventListener("click", openAdminLogin);
+  const product = products.find(p => p.id === id);
+  if (!product) return;
 
-$("closeAdmin")?.addEventListener("click", closeAdminAndLogout);
+  const name = prompt("اسم المنتج:", productName(product));
+  if (name === null) return;
 
-$("adminLogin")?.addEventListener("click", async function () {
-  if (!firebaseReady) {
-    showMessage("loginMsg", "خدمة تسجيل الدخول غير متاحة.");
+  const priceText = prompt("السعر:", productPrice(product));
+  if (priceText === null) return;
+
+  const category = prompt("القسم:", product.category || "");
+  if (category === null) return;
+
+  const price = Number(priceText);
+
+  if (!name.trim() || !Number.isFinite(price) || price < 0 || !category.trim()) {
+    alert("البيانات المدخلة غير صحيحة.");
     return;
   }
-
-  const email = $("adminEmail")?.value.trim() || "";
-  const password = $("adminPassword")?.value || "";
-
-  if (!email || !password) {
-    showMessage("loginMsg", "اكتب البريد الإلكتروني وكلمة المرور.");
-    return;
-  }
-
-  const button = this;
-  const normalText = button.textContent;
-
-  setButtonLoading(button, true, normalText);
 
   try {
-    const result = await auth.signInWithEmailAndPassword(
-      email,
-      password
-    );
+    await db.collection("products").doc(id).update({
+      name: name.trim(),
+      price,
+      category: category.trim()
+    });
 
-    if (result.user.uid !== ADMIN_UID) {
-      await auth.signOut();
-      adminSessionActive = false;
-
-      showMessage(
-        "loginMsg",
-        "هذا الحساب غير مصرح له بدخول لوحة الإدارة."
-      );
-
-      return;
-    }
-
-    adminSessionActive = true;
-
-    if ($("adminPassword")) $("adminPassword").value = "";
-
-    $("loginPane")?.classList.add("hidden");
-    $("adminPane")?.classList.remove("hidden");
-
-    showAdminTab("tabSales");
-
-    const success = await loadCloud();
-
-    if (success) {
-      showMessage("adminMsg", "تم تسجيل الدخول بنجاح.");
-    }
-
+    await loadProducts();
+    showMessage("adminMsg", "تم تعديل المنتج.", "success");
   } catch (error) {
-    console.error("Admin login error:", error);
-
-    adminSessionActive = false;
-
-    showMessage(
-      "loginMsg",
-      "تعذر تسجيل الدخول. راجع البريد وكلمة المرور."
-    );
-
-  } finally {
-    setButtonLoading(button, false, normalText);
+    console.error(error);
+    showMessage("adminMsg", "تعذر تعديل المنتج.", "error");
   }
-});
+}
 
-// ================= تحميل بيانات الإدارة =================
+async function deleteProduct(id) {
+  if (!isAdmin()) return;
+
+  if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
+
+  try {
+    await db.collection("products").doc(id).delete();
+    await loadProducts();
+    showMessage("adminMsg", "تم حذف المنتج.", "success");
+  } catch (error) {
+    console.error(error);
+    showMessage("adminMsg", "تعذر حذف المنتج.", "error");
+  }
+}
+
+// ==========================================
+// 11) الطلبات والإحصائيات
+// ==========================================
+
+function orderDate(order) {
+  if (order.createdAt?.toDate) return order.createdAt.toDate();
+  if (order.createdAt?.seconds) return new Date(order.createdAt.seconds * 1000);
+  return null;
+}
+
+function orderItems(order) {
+  return Array.isArray(order.items) ? order.items : [];
+}
+
+function orderCustomer(order) {
+  return order.customerName || order.name || "عميل";
+}
+
+function orderPhone(order) {
+  return order.customerPhone || order.phone || "";
+}
+
+function orderAddress(order) {
+  return order.customerAddress || order.address || "";
+}
+
+function orderStatus(order) {
+  return order.status || "جديد";
+}
 
 async function loadCloud() {
-  if (!isAdmin()) return false;
+  if (!isAdmin()) return;
 
   try {
-    await loadStoreData();
-
     const snapshot = await db.collection("orders").get();
 
     orders = snapshot.docs.map(doc => ({
@@ -732,161 +918,42 @@ async function loadCloud() {
       ...doc.data()
     }));
 
-    orders.sort((a, b) => getOrderDate(b) - getOrderDate(a));
-
-    renderStats();
-    renderAdminProducts();
-    renderOrders();
-    setupMonthlyReports();
-
-    return true;
-
-  } catch (error) {
-    console.error("Admin loading error:", error);
-    showMessage("adminMsg", "تعذر تحميل بيانات الإدارة.");
-    return false;
-  }
-}
-
-// ================= إحصائيات الإدارة =================
-
-function renderStats() {
-  if (!isAdmin()) return;
-
-  const newOrders = orders.filter(
-    order => getOrderStatus(order) === "new"
-  );
-
-  const completed = orders.filter(
-    order => getOrderStatus(order) === "completed"
-  );
-
-  const revenue = completed.reduce(
-    (sum, order) => sum + Number(order.total || 0),
-    0
-  );
-
-  if ($("statOrders")) $("statOrders").textContent = orders.length;
-  if ($("statNew")) $("statNew").textContent = newOrders.length;
-  if ($("statCompleted")) {
-    $("statCompleted").textContent = completed.length;
-  }
-  if ($("statRevenue")) {
-    $("statRevenue").textContent = money(revenue);
-  }
-}
-
-// ================= إدارة المنتجات =================
-
-function renderAdminProducts() {
-  if (!isAdmin()) return;
-
-  const container = $("adminProducts");
-  if (!container) return;
-
-  container.innerHTML = products.map(product => `
-    <div class="admin-product">
-      <div>
-        <strong>${esc(product.name)}</strong>
-        <span>${money(product.price)}</span>
-        <small>${esc(product.category || "")}</small>
-      </div>
-
-      <button data-delete-product="${esc(product.id)}">
-        حذف
-      </button>
-    </div>
-  `).join("");
-}
-
-$("adminProducts")?.addEventListener("click", async event => {
-  const button = event.target.closest("[data-delete-product]");
-  if (!button || !isAdmin()) return;
-
-  const id = button.dataset.deleteProduct;
-
-  if (!confirm("هل تريد حذف هذا المنتج؟")) return;
-
-  try {
-    await db.collection("products").doc(id).delete();
-
-    products = products.filter(product => product.id !== id);
-
-    renderAdminProducts();
-    renderCategories();
-    renderProducts();
-
-    showMessage("adminMsg", "تم حذف المنتج.");
-
-  } catch (error) {
-    console.error(error);
-    showMessage("adminMsg", "تعذر حذف المنتج.");
-  }
-});
-
-$("addProduct")?.addEventListener("click", async function () {
-  if (!isAdmin()) return;
-
-  const name = $("newName")?.value.trim() || "";
-  const price = Number($("newPrice")?.value || 0);
-  const category = $("newCategory")?.value.trim() || "";
-
-  if (!name || price <= 0 || !category) {
-    showMessage("productMsg", "أدخل اسم المنتج والسعر والقسم.");
-    return;
-  }
-
-  const button = this;
-  const normalText = button.textContent;
-
-  setButtonLoading(button, true, normalText);
-
-  try {
-    const product = {
-      name,
-      price,
-      category,
-      image: selectedProductImage || "",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    const doc = await db.collection("products").add(product);
-
-    products.push({
-      id: doc.id,
-      ...product
+    orders.sort((a, b) => {
+      const da = orderDate(a)?.getTime() || 0;
+      const dbb = orderDate(b)?.getTime() || 0;
+      return dbb - da;
     });
 
-    if ($("newName")) $("newName").value = "";
-    if ($("newPrice")) $("newPrice").value = "";
-    if ($("newCategory")) $("newCategory").value = "";
-
-    selectedProductImage = "";
-
-    if ($("productImagePreview")) {
-      $("productImagePreview").src = "";
-      $("productImagePreview").classList.add("hidden");
-    }
-
-    renderAdminProducts();
-    renderCategories();
-    renderProducts();
-
-    showMessage("productMsg", "تمت إضافة المنتج بنجاح.");
+    renderOrders();
+    renderStats();
+    renderMonthlyReport();
 
   } catch (error) {
-    console.error(error);
-    showMessage("productMsg", "تعذر إضافة المنتج.");
-  } finally {
-    setButtonLoading(button, false, normalText);
+    console.error("Orders load:", error);
+    showMessage("adminMsg", "تعذر تحميل الطلبات. راجع قواعد Firestore.", "error");
   }
-});
+}
 
-// ================= إدارة الطلبات =================
+function renderStats() {
+  const completed = orders.filter(o =>
+    ["مكتمل", "مكتملة", "completed"].includes(orderStatus(o))
+  );
+
+  const newOrders = orders.filter(o =>
+    ["جديد", "new"].includes(orderStatus(o))
+  );
+
+  const revenue = completed.reduce((sum, order) => {
+    return sum + Number(order.total || 0);
+  }, 0);
+
+  if ($("statOrders")) $("statOrders").textContent = money(orders.length);
+  if ($("statNew")) $("statNew").textContent = money(newOrders.length);
+  if ($("statCompleted")) $("statCompleted").textContent = money(completed.length);
+  if ($("statRevenue")) $("statRevenue").textContent = money(revenue) + " جنيه";
+}
 
 function renderOrders() {
-  if (!isAdmin()) return;
-
   const container = $("adminOrders");
   if (!container) return;
 
@@ -896,490 +963,224 @@ function renderOrders() {
   }
 
   container.innerHTML = orders.map(order => {
-    const status = getOrderStatus(order);
-
-    const items = (order.items || []).map(item => `
-      <li>
-        ${esc(item.name)} × ${Number(item.quantity || 1)}
-      </li>
-    `).join("");
+    const date = orderDate(order);
+    const items = orderItems(order);
 
     return `
-      <div class="admin-order">
-        <h3>طلب رقم ${esc(order.id.slice(0, 8))}</h3>
-
-        <p>الاسم: ${esc(order.customerName)}</p>
-        <p>الهاتف: ${esc(order.phone)}</p>
-        <p>العنوان: ${esc(order.address)}</p>
-        <p>التاريخ: ${formatDate(getOrderDate(order))}</p>
-        <p>الإجمالي: ${money(order.total)}</p>
-        <p>الحالة: ${esc(status)}</p>
-
-        <ul>${items}</ul>
-
-        <button data-order-status="completed"
-          data-order-id="${esc(order.id)}">
-          مكتمل
-        </button>
-
-        <button data-order-status="new"
-          data-order-id="${esc(order.id)}">
-          جديد
-        </button>
-
-        <button data-order-status="cancelled"
-          data-order-id="${esc(order.id)}">
-          إلغاء الطلب
-        </button>
-      </div>
+      <article class="admin-order">
+        <h3>طلب ${esc(order.id.slice(0, 8))}</h3>
+        <p><strong>العميل:</strong> ${esc(orderCustomer(order))}</p>
+        <p><strong>الهاتف:</strong> ${esc(orderPhone(order))}</p>
+        <p><strong>العنوان:</strong> ${esc(orderAddress(order))}</p>
+        <p><strong>التاريخ:</strong> ${date ? esc(date.toLocaleString("ar-EG")) : "غير محدد"}</p>
+        <p><strong>الحالة:</strong> ${esc(orderStatus(order))}</p>
+        <p><strong>الإجمالي:</strong> ${money(order.total)} جنيه</p>
+        <ul>
+          ${items.map(item => `
+            <li>${esc(item.name || item.productName || "منتج")} —
+              ${money(item.quantity || 1)} × ${money(item.price || 0)} جنيه
+            </li>
+          `).join("")}
+        </ul>
+        <div class="order-actions">
+          <button type="button" class="secondary" data-order-status="${esc(order.id)}" data-status="مكتمل">تحديد مكتمل</button>
+          <button type="button" class="secondary" data-order-status="${esc(order.id)}" data-status="جديد">تحديد جديد</button>
+          <button type="button" class="secondary" data-order-delete="${esc(order.id)}">حذف الطلب</button>
+        </div>
+      </article>
     `;
   }).join("");
+
+  container.querySelectorAll("[data-order-status]").forEach(button => {
+    button.addEventListener("click", () => {
+      updateOrderStatus(button.dataset.orderStatus, button.dataset.status);
+    });
+  });
+
+  container.querySelectorAll("[data-order-delete]").forEach(button => {
+    button.addEventListener("click", () => {
+      deleteOrder(button.dataset.orderDelete);
+    });
+  });
 }
 
-$("adminOrders")?.addEventListener("click", async event => {
-  const button = event.target.closest("[data-order-status]");
-  if (!button || !isAdmin()) return;
-
-  const id = button.dataset.orderId;
-  const status = button.dataset.orderStatus;
+async function updateOrderStatus(id, status) {
+  if (!isAdmin()) return;
 
   try {
     await db.collection("orders").doc(id).update({ status });
-
-    const order = orders.find(item => item.id === id);
-    if (order) order.status = status;
-
-    renderOrders();
-    renderStats();
-    renderMonthlyReport();
-
-    showMessage("adminMsg", "تم تحديث حالة الطلب.");
-
+    await loadCloud();
+    showMessage("adminMsg", "تم تحديث حالة الطلب.", "success");
   } catch (error) {
     console.error(error);
-    showMessage("adminMsg", "تعذر تحديث حالة الطلب.");
+    showMessage("adminMsg", "تعذر تحديث حالة الطلب.", "error");
   }
-});
+}
 
-// ================= إعدادات التواصل =================
-
-$("saveSettings")?.addEventListener("click", async function () {
+async function deleteOrder(id) {
   if (!isAdmin()) return;
 
-  const whatsapp = $("editWhatsapp")?.value.trim() || "";
-  const facebook = $("editFacebook")?.value.trim() || "";
-  const messenger = $("editMessenger")?.value.trim() || "";
+  if (!confirm("هل تريد حذف هذا الطلب نهائياً؟")) return;
 
   try {
-    await db.collection("settings").doc("main").set({
-      ...settings,
-      whatsapp,
-      facebook,
-      messenger
-    }, { merge: true });
-
-    settings.whatsapp = whatsapp;
-    settings.facebook = facebook;
-    settings.messenger = messenger;
-
-    showMessage("settingsMsg", "تم حفظ إعدادات التواصل.");
-
+    await db.collection("orders").doc(id).delete();
+    await loadCloud();
+    showMessage("adminMsg", "تم حذف الطلب.", "success");
   } catch (error) {
     console.error(error);
-    showMessage("settingsMsg", "تعذر حفظ الإعدادات.");
+    showMessage("adminMsg", "تعذر حذف الطلب.", "error");
   }
-});
-
-// ================= اسم المتجر =================
-
-$("saveStoreName")?.addEventListener("click", async function () {
-  if (!isAdmin()) return;
-
-  const name = $("editStoreName")?.value.trim() || "";
-
-  if (!name) {
-    showMessage("settingsMsg", "اكتب اسم المتجر.");
-    return;
-  }
-
-  try {
-    await db.collection("settings").doc("main").set({
-      storeName: name
-    }, { merge: true });
-
-    settings.storeName = name;
-    renderStoreName();
-
-    showMessage("settingsMsg", "تم تحديث اسم المتجر.");
-
-  } catch (error) {
-    console.error(error);
-    showMessage("settingsMsg", "تعذر تحديث اسم المتجر.");
-  }
-});
-
-// ================= تحديث بيانات حساب الإدارة =================
-
-$("updateAdminCredentials")?.addEventListener("click", async function () {
-  if (!isAdmin()) return;
-
-  const email = $("newAdminEmail")?.value.trim() || "";
-  const password = $("newAdminPassword")?.value || "";
-
-  if (!email && !password) {
-    showMessage("settingsMsg", "أدخل البريد الجديد أو كلمة المرور الجديدة.");
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-
-    if (email) {
-      await user.updateEmail(email);
-    }
-
-    if (password) {
-      if (password.length < 6) {
-        showMessage("settingsMsg", "كلمة المرور يجب ألا تقل عن 6 أحرف.");
-        return;
-      }
-
-      await user.updatePassword(password);
-    }
-
-    if ($("newAdminEmail")) $("newAdminEmail").value = "";
-    if ($("newAdminPassword")) $("newAdminPassword").value = "";
-
-    showMessage("settingsMsg", "تم تحديث بيانات الدخول.");
-
-  } catch (error) {
-    console.error(error);
-
-    if (error.code === "auth/requires-recent-login") {
-      showMessage(
-        "settingsMsg",
-        "لأمان الحساب، سجّل الخروج ثم ادخل مجدداً قبل تغيير بيانات الدخول."
-      );
-    } else {
-      showMessage("settingsMsg", "تعذر تحديث بيانات الحساب.");
-    }
-  }
-});
-
-// ================= التقارير الشهرية =================
-
-function monthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function monthLabel(key) {
-  const [year, month] = key.split("-").map(Number);
-
-  return new Date(year, month - 1, 1).toLocaleDateString("ar-EG", {
-    year: "numeric",
-    month: "long"
-  });
-}
-
-function getMonthlyOrders() {
-  return orders.filter(order => {
-    const date = getOrderDate(order);
-    return monthKey(date) === selectedReportMonth;
-  });
-}
-
-function setupMonthlyReports() {
-  if (!isAdmin()) return;
-
-  let navButton = document.getElementById("tabMonthlyReports");
-
-  if (!navButton) {
-    const nav = document.querySelector("[data-admin-tab]")?.parentElement;
-
-    if (nav) {
-      navButton = document.createElement("button");
-      navButton.id = "tabMonthlyReports";
-      navButton.type = "button";
-      navButton.dataset.adminTab = "monthlyReports";
-      navButton.textContent = "التقارير الشهرية";
-      nav.appendChild(navButton);
-    }
-  }
-
-  if (navButton) {
-    navButton.onclick = () => {
-      if (!isAdmin()) return;
-      showAdminTab("monthlyReports");
-      renderMonthlyReport();
-    };
-  }
-
-  let section = $("monthlyReports");
-
-  if (!section) {
-    section = document.createElement("section");
-    section.id = "monthlyReports";
-    section.className = "admin-tab hidden";
-
-    const adminPane = $("adminPane");
-    if (!adminPane) return;
-
-    section.innerHTML = `
-      <h2>التقارير الشهرية</h2>
-
-      <div class="monthly-report-controls">
-        <label for="reportMonth">اختر الشهر</label>
-        <select id="reportMonth"></select>
-
-        <button id="refreshMonthlyReport" type="button">
-          تحديث التقرير
-        </button>
-
-        <button id="downloadMonthlyReport" type="button">
-          تحميل تقرير Excel
-        </button>
-      </div>
-
-      <div class="monthly-report-stats">
-        <div>
-          <span>عدد الطلبات</span>
-          <strong id="monthOrders">0</strong>
-        </div>
-
-        <div>
-          <span>الطلبات الجديدة</span>
-          <strong id="monthNew">0</strong>
-        </div>
-
-        <div>
-          <span>الطلبات المكتملة</span>
-          <strong id="monthCompleted">0</strong>
-        </div>
-
-        <div>
-          <span>الطلبات الملغاة</span>
-          <strong id="monthCancelled">0</strong>
-        </div>
-
-        <div>
-          <span>إجمالي قيمة الطلبات</span>
-          <strong id="monthTotal">0</strong>
-        </div>
-
-        <div>
-          <span>إيرادات الطلبات المكتملة</span>
-          <strong id="monthRevenue">0</strong>
-        </div>
-      </div>
-
-      <div id="monthlyReportDetails"></div>
-    `;
-
-    adminPane.appendChild(section);
-  }
-
-  const select = $("reportMonth");
-  if (!select) return;
-
-  const months = new Set([monthKey(new Date())]);
-
-  orders.forEach(order => {
-    const date = getOrderDate(order);
-    if (date.getTime() > 0) months.add(monthKey(date));
-  });
-
-  const sortedMonths = [...months].sort().reverse();
-
-  if (!selectedReportMonth || !months.has(selectedReportMonth)) {
-    selectedReportMonth = sortedMonths[0];
-  }
-
-  select.innerHTML = sortedMonths.map(key => `
-    <option value="${key}" ${key === selectedReportMonth ? "selected" : ""}>
-      ${monthLabel(key)}
-    </option>
-  `).join("");
-
-  select.onchange = () => {
-    selectedReportMonth = select.value;
-    renderMonthlyReport();
-  };
-
-  $("refreshMonthlyReport").onclick = refreshMonthlyReport;
-  $("downloadMonthlyReport").onclick = downloadMonthlyExcel;
-
-  renderMonthlyReport();
-}
+// ==========================================
+// 12) التقارير الشهرية والتصدير
+// ==========================================
 
 function renderMonthlyReport() {
-  if (!isAdmin()) return;
+  const pane = $("adminPane");
+  if (!pane || !isAdmin()) return;
 
-  const monthlyOrders = getMonthlyOrders();
+  let report = $("monthlyReportSection");
 
-  const newOrders = monthlyOrders.filter(
-    order => getOrderStatus(order) === "new"
-  );
+  if (!report) {
+    report = document.createElement("section");
+    report.id = "monthlyReportSection";
+    report.className = "admin-section";
 
-  const completed = monthlyOrders.filter(
-    order => getOrderStatus(order) === "completed"
-  );
+    report.innerHTML = `
+      <h3>📅 التقارير الشهرية</h3>
+      <p id="monthlyReportText">التقرير الشهري</p>
+      <button type="button" class="secondary" id="refreshMonthlyReport">تحديث التقرير</button>
+      <button type="button" class="primary" id="downloadMonthlyReport">تحميل تقرير CSV</button>
+    `;
 
-  const cancelled = monthlyOrders.filter(
-    order => getOrderStatus(order) === "cancelled"
-  );
+    pane.querySelector(".admin-content")?.appendChild(report);
 
-  const total = monthlyOrders.reduce(
-    (sum, order) => sum + Number(order.total || 0),
-    0
-  );
-
-  const revenue = completed.reduce(
-    (sum, order) => sum + Number(order.total || 0),
-    0
-  );
-
-  if ($("monthOrders")) $("monthOrders").textContent = monthlyOrders.length;
-  if ($("monthNew")) $("monthNew").textContent = newOrders.length;
-  if ($("monthCompleted")) {
-    $("monthCompleted").textContent = completed.length;
-  }
-  if ($("monthCancelled")) {
-    $("monthCancelled").textContent = cancelled.length;
-  }
-  if ($("monthTotal")) $("monthTotal").textContent = money(total);
-  if ($("monthRevenue")) {
-    $("monthRevenue").textContent = money(revenue);
+    $("refreshMonthlyReport")?.addEventListener("click", renderMonthlyReport);
+    $("downloadMonthlyReport")?.addEventListener("click", downloadMonthlyReport);
   }
 
-  const details = $("monthlyReportDetails");
-  if (!details) return;
+  const now = new Date();
+  const monthOrders = orders.filter(order => {
+    const date = orderDate(order);
+    return date &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+  });
 
-  if (!monthlyOrders.length) {
-    details.innerHTML = "<p>لا توجد طلبات في هذا الشهر.</p>";
-    return;
-  }
+  const completed = monthOrders.filter(order =>
+    ["مكتمل", "مكتملة", "completed"].includes(orderStatus(order))
+  );
 
-  details.innerHTML = `
-    <h3>تفاصيل طلبات ${monthLabel(selectedReportMonth)}</h3>
+  const revenue = completed.reduce((sum, order) =>
+    sum + Number(order.total || 0), 0
+  );
 
-    ${monthlyOrders.map(order => `
-      <div class="monthly-order">
-        <strong>${esc(order.customerName || "عميل")}</strong>
-        <span>${money(order.total)}</span>
-        <span>${esc(getOrderStatus(order))}</span>
-        <small>${formatDate(getOrderDate(order))}</small>
-      </div>
-    `).join("")}
-  `;
-}
+  const text = $("monthlyReportText");
 
-// تحديث بيانات الطلبات من Firebase ثم تحديث التقرير
-
-async function refreshMonthlyReport() {
-  if (!isAdmin()) return;
-
-  const button = $("refreshMonthlyReport");
-  const normalText = button?.textContent || "تحديث التقرير";
-
-  setButtonLoading(button, true, normalText);
-
-  try {
-    const snapshot = await db.collection("orders").get();
-
-    orders = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    orders.sort((a, b) => getOrderDate(b) - getOrderDate(a));
-
-    renderStats();
-    renderOrders();
-    setupMonthlyReports();
-
-    showMessage("adminMsg", "تم تحديث التقارير والطلبات بنجاح.");
-
-  } catch (error) {
-    console.error("Monthly report refresh error:", error);
-    showMessage("adminMsg", "تعذر تحديث التقرير.");
-  } finally {
-    setButtonLoading(button, false, normalText);
+  if (text) {
+    text.textContent =
+      `طلبات الشهر: ${monthOrders.length} | الطلبات المكتملة: ${completed.length} | إجمالي المبيعات المكتملة: ${money(revenue)} جنيه`;
   }
 }
 
-// تحميل التقرير بصيغة CSV المتوافقة مع Excel
-
-function downloadMonthlyExcel() {
+function downloadMonthlyReport() {
   if (!isAdmin()) return;
-
-  const monthlyOrders = getMonthlyOrders();
 
   const rows = [
-    ["الاسم", "الهاتف", "العنوان", "التاريخ", "الحالة", "الإجمالي"]
+    ["رقم الطلب", "اسم العميل", "رقم الهاتف", "الإجمالي", "الحالة", "التاريخ"]
   ];
 
-  monthlyOrders.forEach(order => {
+  orders.forEach(order => {
+    const date = orderDate(order);
+
     rows.push([
-      order.customerName || "",
-      order.phone || "",
-      order.address || "",
-      formatDate(getOrderDate(order)),
-      getOrderStatus(order),
-      Number(order.total || 0)
+      order.id,
+      orderCustomer(order),
+      orderPhone(order),
+      Number(order.total || 0),
+      orderStatus(order),
+      date ? date.toLocaleString("ar-EG") : ""
     ]);
   });
 
   const csv = "\uFEFF" + rows.map(row =>
-    row.map(value =>
-      `"${String(value).replace(/"/g, '""')}"`
-    ).join(",")
+    row.map(value => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")
   ).join("\n");
 
-  const blob = new Blob([csv], {
-    type: "text/csv;charset=utf-8;"
-  });
-
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = `تقرير-زهرة-حماة-${selectedReportMonth}.csv`;
-
-  document.body.appendChild(link);
+  link.download = "zahret-hama-orders-report.csv";
   link.click();
-  link.remove();
 
   URL.revokeObjectURL(url);
 }
 
-// ================= تسجيل الخروج =================
+// ==========================================
+// 13) التنقل داخل لوحة الإدارة
+// ==========================================
 
-$("logout")?.addEventListener("click", closeAdminAndLogout);
+document.querySelectorAll("[data-admin-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    if (!isAdmin()) return;
 
-// لا تحتفظ بجلسة إدارة قديمة عند إعادة تحميل الصفحة
-if (auth) {
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      adminSessionActive = false;
-      return;
+    const tabId = button.dataset.adminTab;
+
+    document.querySelectorAll(".admin-tab").forEach(tab => {
+      tab.classList.add("hidden");
+    });
+
+    $(tabId)?.classList.remove("hidden");
+
+    document.querySelectorAll("[data-admin-tab]").forEach(navButton => {
+      navButton.classList.remove("active");
+    });
+
+    button.classList.add("active");
+
+    if (tabId === "tabOrders" || tabId === "tabSales") {
+      loadCloud();
     }
 
-    if (user.uid !== ADMIN_UID) {
-      adminSessionActive = false;
-      auth.signOut().catch(console.error);
+    if (tabId === "tabContact" || tabId === "tabSettings") {
+      loadSettings();
     }
   });
-}
+});
 
-// ================= تشغيل المتجر =================
+// ==========================================
+// 14) إغلاق النوافذ
+// ==========================================
+
+document.querySelectorAll("[data-close]").forEach(button => {
+  button.addEventListener("click", () => {
+    closeModal(button.dataset.close);
+  });
+});
+
+["checkoutModal", "adminModal"].forEach(id => {
+  $(id)?.addEventListener("click", event => {
+    if (event.target === $(id)) {
+      closeModal(id);
+    }
+  });
+});
+
+// ==========================================
+// 15) تشغيل المتجر
+// ==========================================
 
 async function startStore() {
-  if (!firebaseReady) {
-    console.error("Firebase is not ready.");
-    return;
-  }
+  renderCart();
 
-  await loadStoreData();
+  await loadSettings();
+  await loadProducts();
+
+  // لا نفتح لوحة الإدارة تلقائياً.
+  // يجب أن يسجل المدير الدخول بنفسه.
 }
 
 document.addEventListener("DOMContentLoaded", startStore);
