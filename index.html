@@ -37,6 +37,7 @@
 .form-group input,.form-group textarea,.form-group select{width:100%;box-sizing:border-box}
 .close{position:absolute;left:12px;top:10px;border:0;background:transparent;font-size:28px;cursor:pointer}
 .admin-login-box{max-width:480px;margin:20px auto}
+#monthlyReportSelect{width:100%;padding:11px 13px;border:1px solid #e5e5e5;border-radius:10px;margin:8px 0 14px;background:#fff}
 @media(max-width:480px){
 .modal{padding:8px}
 .modal-content{margin:8px auto;padding:16px}
@@ -194,6 +195,23 @@
 <div id="adminOrders"></div>
 </section>
 
+<section class="admin-section admin-tab hidden" id="tabReports">
+<h3>📈 التقارير الشهرية</h3>
+<label for="monthlyReportSelect">اختيار الشهر</label>
+<select id="monthlyReportSelect"></select>
+<div class="stats">
+<div class="stat-card"><span>إجمالي قيمة الطلبات</span><strong id="monthlyAllTotal">0</strong></div>
+<div class="stat-card"><span>المبيعات المكتملة</span><strong id="monthlyRevenue">0</strong></div>
+<div class="stat-card"><span>عدد الطلبات</span><strong id="monthlyOrderCount">0</strong></div>
+<div class="stat-card"><span>طلبات مكتملة</span><strong id="monthlyCompleted">0</strong></div>
+<div class="stat-card"><span>طلبات جديدة</span><strong id="monthlyNew">0</strong></div>
+<div class="stat-card"><span>طلبات ملغاة</span><strong id="monthlyCancelled">0</strong></div>
+</div>
+<button class="primary" type="button" id="downloadMonthlyExcel" style="margin-top:14px">تحميل تقرير الشهر Excel</button>
+<h3 style="margin-top:20px">تفاصيل طلبات الشهر</h3>
+<div id="monthlyOrderDetails"></div>
+</section>
+
 <section class="admin-section admin-tab hidden" id="tabContact">
 <h3>📱 وسائل التواصل</h3>
 <div class="form-group"><label for="editWhatsapp">رقم واتساب مع مفتاح الدولة</label><input id="editWhatsapp" type="tel" placeholder="مثال: 2010xxxxxxxx"></div>
@@ -222,6 +240,7 @@
 <button type="button" class="active" data-admin-tab="tabSales"><span>📊</span>المبيعات</button>
 <button type="button" data-admin-tab="tabProducts"><span>📦</span>المنتجات</button>
 <button type="button" data-admin-tab="tabOrders"><span>🛒</span>الطلبات</button>
+<button type="button" data-admin-tab="tabReports"><span>📈</span>التقارير</button>
 <button type="button" data-admin-tab="tabContact"><span>📱</span>التواصل</button>
 <button type="button" data-admin-tab="tabSettings"><span>⚙️</span>الإعدادات</button>
 </nav>
