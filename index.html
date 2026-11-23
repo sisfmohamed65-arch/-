@@ -1,538 +1,365 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
-
-:root {
-  --green: #176b45;
-  --deep: #104b34;
-  --gold: #d6aa4c;
-  --cream: #fbfaf5;
-  --ink: #20352b;
-  --muted: #718078;
-  --border: #e5e9e2;
-  --white: #ffffff;
-  --danger: #c0392b;
-  --shadow: 0 8px 28px rgba(16, 75, 52, .09);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  background: var(--cream);
-  color: var(--ink);
-  font-family: 'Cairo', Arial, sans-serif;
-  direction: rtl;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-  border: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.wrap {
-  width: min(1150px, 92%);
-  margin: auto;
-}
-
-/* Header */
-
-.top {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 20;
-}
-
-.nav {
-  min-height: 76px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--deep);
-  font-size: 23px;
-  font-weight: 900;
-}
-
-.brand span {
-  color: var(--gold);
-}
-
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Buttons */
-
-.primary,
-.secondary,
-.danger,
-.link {
-  padding: 11px 18px;
-  border-radius: 12px;
-  font-weight: 800;
-  transition: .2s;
-}
-
-.primary {
-  background: var(--green);
-  color: white;
-}
-
-.primary:hover {
-  background: var(--deep);
-}
-
-.secondary {
-  background: #edf4ee;
-  color: var(--deep);
-  border: 1px solid #dce9dd;
-}
-
-.secondary:hover {
-  background: #e1eee3;
-}
-
-.danger {
-  background: #fff0ed;
-  color: var(--danger);
-}
-
-.link {
-  background: transparent;
-  color: var(--green);
-  padding: 7px;
-}
-
-button:disabled {
-  opacity: .6;
-  cursor: wait;
-}
-
-/* Hero */
-
-.hero {
-  padding: 65px 0;
-  background: linear-gradient(120deg, #104b34, #20764d);
-  color: white;
-}
-
-.hero-content {
-  max-width: 720px;
-}
-
-.hero h1 {
-  font-size: clamp(30px, 5vw, 48px);
-  line-height: 1.5;
-  margin: 0 0 15px;
-}
-
-.hero p {
-  color: #e5eee7;
-  line-height: 2;
-  font-size: 17px;
-}
-
-.hero .primary {
-  background: var(--gold);
-  color: #25372b;
-  margin-top: 15px;
-}
-
-/* Features */
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  padding: 28px 0;
-}
-
-.feature {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
-
-.feature h3 {
-  color: var(--green);
-  margin: 5px 0;
-}
-
-/* Products */
-
-.section {
-  padding: 35px 0;
-}
-
-.section-title {
-  font-size: 27px;
-  color: var(--deep);
-  margin: 0 0 20px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 22px;
-}
-
-.toolbar input,
-.toolbar select {
-  flex: 1;
-  min-width: 180px;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: white;
-  color: var(--ink);
-  outline: none;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(23, 107, 69, .09);
-}
-
-.products {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.product {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: transform .2s;
-}
-
-.product:hover {
-  transform: translateY(-4px);
-}
-
-.product img {
-  width: 100%;
-  height: 190px;
-  object-fit: contain;
-  background: #f7f8f4;
-  padding: 10px;
-}
-
-.product .placeholder {
-  height: 190px;
-  display: grid;
-  place-items: center;
-  background: #f1f4ee;
-  color: var(--muted);
-  font-size: 42px;
-}
-
-.product-info {
-  padding: 15px;
-}
-
-.product h3 {
-  margin: 0 0 8px;
-  font-size: 17px;
-}
-
-.product .price {
-  color: var(--green);
-  font-weight: 900;
-  margin: 8px 0 12px;
-}
-
-/* Cart and checkout */
-
-.cart {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  padding: 18px;
-  margin: 25px 0;
-}
-
-.cart-item,
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.cart-total {
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--green);
-  margin-top: 15px;
-}
-
-/* Footer */
-
-footer {
-  background: var(--deep);
-  color: white;
-  padding: 30px 0;
-  margin-top: 45px;
-  text-align: center;
-}
-
-footer p {
-  color: #d8e7dc;
-}
-
-/* Modals */
-
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(0, 0, 0, .55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 15px;
-  overflow-y: auto;
-}
-
-.modal-content {
-  width: min(650px, 100%);
-  max-height: 90vh;
-  overflow-y: auto;
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, .2);
-}
-
-.modal h2 {
-  color: var(--deep);
-  margin-top: 0;
-}
-
-.close {
-  float: left;
-  background: #f2f4f1;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
-}
-
-/* Forms */
-
-.form-group {
-  margin: 14px 0;
-}
-
-.form-group label,
-.image-upload label {
-  display: block;
-  font-weight: 800;
-  margin-bottom: 7px;
-}
-
-textarea {
-  min-height: 90px;
-  resize: vertical;
-}
-
-/* Admin */
-
-.admin-panel {
-  width: min(950px, 100%);
-}
-
-.admin-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin: 20px 0;
-}
-
-.stat-card {
-  background: #f4f8f3;
-  border: 1px solid var(--border);
-  padding: 15px;
-  border-radius: 14px;
-}
-
-.stat-card strong {
-  display: block;
-  color: var(--green);
-  font-size: 23px;
-}
-
-.admin-section {
-  border-top: 1px solid var(--border);
-  padding-top: 20px;
-  margin-top: 22px;
-}
-
-.admin-product {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  margin: 10px 0;
-}
-
-/* Product image upload */
-
-.image-upload {
-  margin: 18px 0;
-  padding: 15px;
-  background: #f8faf6;
-  border: 1px dashed #b8cdbb;
-  border-radius: 15px;
-}
-
-.image-upload-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.product-image-preview {
-  display: block;
-  width: 180px;
-  height: 160px;
-  object-fit: contain;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  margin-top: 14px;
-  padding: 5px;
-}
-
-.image-upload .link {
-  margin-top: 10px;
-}
-
-/* Responsive */
-
-@media (max-width: 850px) {
-  .products {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .nav {
-    min-height: 65px;
-  }
-
-  .brand {
-    font-size: 19px;
-  }
-
-  .nav-actions {
-    gap: 5px;
-  }
-
-  .nav-actions button {
-    padding: 9px 11px;
-    font-size: 12px;
-  }
-
-  .hero {
-    padding: 42px 0;
-  }
-
-  .features {
-    grid-template-columns: 1fr;
-  }
-
-  .products {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .product img,
-  .product .placeholder {
-    height: 145px;
-  }
-
-  .product-info {
-    padding: 10px;
-  }
-
-  .product h3 {
-    font-size: 14px;
-  }
-
-  .admin-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .modal-content {
-    padding: 17px;
-  }
-}
-
-@media (max-width: 360px) {
-  .products {
-    grid-template-columns: 1fr;
-  }
-}
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b45">
+  <meta name="description" content="زهرة حماة - متجر المنتجات الغذائية والبقالة">
+  <title>زهرة حماة | المتجر</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- رأس الموقع -->
+  <header class="top">
+    <div class="wrap nav">
+      <a href="#" class="brand">
+        🌿 <span id="storeTitle">زهرة حماة</span>
+      </a>
+
+      <div class="nav-actions">
+        <button class="secondary" id="openAdmin" type="button">
+          لوحة الإدارة
+        </button>
+        <a href="#cart" class="primary">
+          🛒 السلة (<span id="cartCount">0</span>)
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- الواجهة الرئيسية -->
+  <main>
+    <section class="hero">
+      <div class="wrap hero-content">
+        <h1>أهلاً بيكم في زهرة حماة 🌿</h1>
+        <p>
+          كل احتياجاتك في مكان واحد.
+          اختار منتجاتك واطلب بسهولة من متجرنا.
+        </p>
+        <a href="#productsSection" class="primary">
+          تسوق الآن
+        </a>
+      </div>
+    </section>
+
+    <!-- مميزات المتجر -->
+    <section class="wrap features">
+      <div class="feature">
+        <h3>🛍️ منتجات متنوعة</h3>
+        <p>اختيارات متعددة تناسب احتياجاتك.</p>
+      </div>
+
+      <div class="feature">
+        <h3>📱 طلب سهل</h3>
+        <p>اطلب منتجاتك بخطوات بسيطة.</p>
+      </div>
+
+      <div class="feature">
+        <h3>💚 خدمة العملاء</h3>
+        <p>تواصل معنا بسهولة.</p>
+      </div>
+    </section>
+
+    <!-- المنتجات -->
+    <section class="wrap section" id="productsSection">
+      <h2 class="section-title">منتجاتنا</h2>
+
+      <div class="toolbar">
+        <input
+          type="search"
+          id="search"
+          placeholder="ابحث عن منتج..."
+          aria-label="البحث عن منتج"
+        >
+      </div>
+
+      <div id="categories" class="toolbar"></div>
+
+      <div id="products" class="products">
+        <p class="muted">جاري تحميل المنتجات...</p>
+      </div>
+    </section>
+
+    <!-- السلة -->
+    <section class="wrap section" id="cart">
+      <div class="cart">
+        <h2 class="section-title">🛒 سلة المشتريات</h2>
+
+        <div id="cartItems">
+          <p class="muted">السلة لسه فاضية.</p>
+        </div>
+
+        <div class="cart-total">
+          الإجمالي: <span id="total">0</span> جنيه
+        </div>
+
+        <div class="toolbar" style="margin-top:18px">
+          <button class="primary" id="checkout" type="button">
+            إتمام الطلب
+          </button>
+
+          <button class="secondary" id="clearCart" type="button">
+            تفريغ السلة
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- الفوتر -->
+  <footer>
+    <div class="wrap">
+      <h3 id="footerName">زهرة حماة</h3>
+      <p>شكراً لزيارتكم متجرنا 💚</p>
+      <p>جميع الحقوق محفوظة © <span id="footerNameBottom">زهرة حماة</span></p>
+    </div>
+  </footer>
+
+  <!-- نافذة إتمام الطلب -->
+  <div class="modal hidden" id="checkoutModal">
+    <div class="modal-content">
+      <button class="close" type="button" data-close="checkoutModal">×</button>
+
+      <h2>إتمام الطلب</h2>
+
+      <div class="form-group">
+        <label for="customerName">الاسم بالكامل</label>
+        <input id="customerName" type="text" placeholder="اكتب اسمك">
+      </div>
+
+      <div class="form-group">
+        <label for="customerPhone">رقم الموبايل</label>
+        <input id="customerPhone" type="tel" placeholder="01xxxxxxxxx">
+      </div>
+
+      <div class="form-group">
+        <label for="customerAddress">العنوان بالتفصيل</label>
+        <textarea id="customerAddress" placeholder="اكتب عنوانك"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="contactChannel">طريقة التواصل</label>
+        <select id="contactChannel">
+          <option value="whatsapp">واتساب</option>
+          <option value="messenger">ماسنجر</option>
+          <option value="facebook">فيسبوك</option>
+        </select>
+      </div>
+
+      <button class="primary" id="sendOrder" type="button">
+        إرسال الطلب
+      </button>
+    </div>
+  </div>
+
+  <!-- لوحة الإدارة -->
+  <div class="modal hidden" id="adminModal">
+    <div class="modal-content admin-panel">
+      <button class="close" type="button" data-close="adminModal">×</button>
+
+      <h2>لوحة إدارة زهرة حماة</h2>
+
+      <!-- تسجيل الدخول -->
+      <div id="loginPane">
+        <h3>تسجيل دخول الإدارة</h3>
+
+        <div class="form-group">
+          <label for="adminEmail">البريد الإلكتروني</label>
+          <input id="adminEmail" type="email" placeholder="البريد الإلكتروني">
+        </div>
+
+        <div class="form-group">
+          <label for="adminPassword">كلمة المرور</label>
+          <input id="adminPassword" type="password" placeholder="كلمة المرور">
+        </div>
+
+        <button class="primary" id="adminLogin" type="button">
+          تسجيل الدخول
+        </button>
+
+        <p id="loginMsg" class="hint"></p>
+      </div>
+
+      <!-- محتوى الإدارة بعد الدخول -->
+      <div id="adminPane" class="hidden">
+
+        <div class="toolbar">
+          <button class="secondary" id="logout" type="button">
+            تسجيل الخروج
+          </button>
+        </div>
+
+        <p id="adminMsg" class="hint"></p>
+
+        <!-- الإحصائيات -->
+        <section class="admin-section">
+          <h3>إحصائيات المتجر</h3>
+
+          <div class="stats">
+            <div class="stat-card">
+              <span>كل الطلبات</span>
+              <strong id="statOrders">0</strong>
+            </div>
+
+            <div class="stat-card">
+              <span>الطلبات الجديدة</span>
+              <strong id="statNew">0</strong>
+            </div>
+
+            <div class="stat-card">
+              <span>الطلبات المكتملة</span>
+              <strong id="statCompleted">0</strong>
+            </div>
+
+            <div class="stat-card">
+              <span>إجمالي المبيعات</span>
+              <strong id="statRevenue">0 جنيه</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- إضافة منتج -->
+        <section class="admin-section">
+          <h3>إضافة منتج جديد</h3>
+
+          <div class="form-group">
+            <label for="newName">اسم المنتج</label>
+            <input id="newName" type="text" placeholder="اسم المنتج">
+          </div>
+
+          <div class="form-group">
+            <label for="newPrice">السعر بالجنيه</label>
+            <input id="newPrice" type="number" min="0" step="0.01" placeholder="السعر">
+          </div>
+
+          <div class="form-group">
+            <label for="newCategory">القسم</label>
+            <input id="newCategory" type="text" placeholder="مثلاً: مواد غذائية">
+          </div>
+
+          <div class="image-upload">
+            <label>صورة المنتج</label>
+
+            <div class="image-upload-buttons">
+              <button class="secondary" id="chooseGallery" type="button">
+                🖼️ اختيار من المعرض
+              </button>
+
+              <button class="secondary" id="takeProductPhoto" type="button">
+                📷 تصوير بالكاميرا
+              </button>
+            </div>
+
+            <input
+              type="file"
+              id="productImageGallery"
+              accept="image/*"
+              hidden
+            >
+
+            <input
+              type="file"
+              id="productImageCamera"
+              accept="image/*"
+              capture="environment"
+              hidden
+            >
+
+            <img
+              id="productImagePreview"
+              class="product-image-preview hidden"
+              alt="معاينة صورة المنتج"
+            >
+
+            <button
+              class="link hidden"
+              id="removeProductImage"
+              type="button"
+            >
+              إزالة الصورة
+            </button>
+          </div>
+
+          <button class="primary" id="addProduct" type="button">
+            إضافة المنتج
+          </button>
+        </section>
+
+        <!-- إدارة المنتجات -->
+        <section class="admin-section">
+          <h3>إدارة المنتجات</h3>
+          <div id="adminProducts"></div>
+        </section>
+
+        <!-- الطلبات -->
+        <section class="admin-section">
+          <h3>طلبات العملاء</h3>
+          <div id="adminOrders"></div>
+        </section>
+
+        <!-- إعدادات المتجر -->
+        <section class="admin-section">
+          <h3>إعدادات المتجر والتواصل</h3>
+
+          <div class="form-group">
+            <label for="editStoreName">اسم المتجر</label>
+            <input id="editStoreName" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="editWhatsapp">رقم واتساب مع مفتاح الدولة</label>
+            <input id="editWhatsapp" type="tel">
+          </div>
+
+          <div class="form-group">
+            <label for="editFacebook">رابط صفحة فيسبوك</label>
+            <input id="editFacebook" type="url">
+          </div>
+
+          <div class="form-group">
+            <label for="editMessenger">رابط ماسنجر</label>
+            <input id="editMessenger" type="url">
+          </div>
+
+          <button class="primary" id="saveSettings" type="button">
+            حفظ إعدادات المتجر
+          </button>
+        </section>
+
+        <!-- تحديث بيانات الدخول -->
+        <section class="admin-section">
+          <h3>تحديث بيانات دخول الإدارة</h3>
+
+          <div class="form-group">
+            <label for="newAdminEmail">البريد الإلكتروني الجديد</label>
+            <input id="newAdminEmail" type="email">
+          </div>
+
+          <div class="form-group">
+            <label for="newAdminPassword">كلمة المرور الجديدة</label>
+            <input id="newAdminPassword" type="password">
+          </div>
+
+          <button class="primary" id="updateAdminCredentials" type="button">
+            تحديث بيانات الدخول
+          </button>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <!-- ملف تشغيل المتجر -->
+  <script src="app.js"></script>
+
+</body>
+</html>
