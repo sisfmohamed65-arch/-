@@ -1,5 +1,4 @@
 
-
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -9,6 +8,33 @@
   <meta name="description" content="زهرة حماة - متجر المنتجات الغذائية والبقالة">
   <title>زهرة حماة | المتجر</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- ضمان إخفاء النوافذ المغلقة -->
+  <style>
+    .hidden {
+      display: none !important;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      overflow-y: auto;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      position: relative;
+      pointer-events: auto;
+    }
+
+    .modal button,
+    .modal input,
+    .modal textarea,
+    .modal select {
+      pointer-events: auto;
+    }
+  </style>
 </head>
 
 <body>
@@ -24,6 +50,7 @@
         <button class="secondary" id="openAdmin" type="button">
           لوحة الإدارة
         </button>
+
         <a href="#cart" class="primary">
           🛒 السلة (<span id="cartCount">0</span>)
         </a>
@@ -33,13 +60,16 @@
 
   <!-- الواجهة الرئيسية -->
   <main>
+
     <section class="hero">
       <div class="wrap hero-content">
         <h1>أهلاً بيكم في زهرة حماة 🌿</h1>
+
         <p>
           كل احتياجاتك في مكان واحد.
           اختار منتجاتك واطلب بسهولة من متجرنا.
         </p>
+
         <a href="#productsSection" class="primary">
           تسوق الآن
         </a>
@@ -48,6 +78,7 @@
 
     <!-- مميزات المتجر -->
     <section class="wrap features">
+
       <div class="feature">
         <h3>🛍️ منتجات متنوعة</h3>
         <p>اختيارات متعددة تناسب احتياجاتك.</p>
@@ -62,10 +93,12 @@
         <h3>💚 خدمة العملاء</h3>
         <p>تواصل معنا بسهولة.</p>
       </div>
+
     </section>
 
     <!-- المنتجات -->
     <section class="wrap section" id="productsSection">
+
       <h2 class="section-title">منتجاتنا</h2>
 
       <div class="toolbar">
@@ -82,11 +115,14 @@
       <div id="products" class="products">
         <p class="muted">جاري تحميل المنتجات...</p>
       </div>
+
     </section>
 
     <!-- السلة -->
     <section class="wrap section" id="cart">
+
       <div class="cart">
+
         <h2 class="section-title">🛒 سلة المشتريات</h2>
 
         <div id="cartItems">
@@ -94,10 +130,13 @@
         </div>
 
         <div class="cart-total">
-          الإجمالي: <span id="total">0</span> جنيه
+          الإجمالي:
+          <span id="total">0</span>
+          جنيه
         </div>
 
         <div class="toolbar" style="margin-top:18px">
+
           <button class="primary" id="checkout" type="button">
             إتمام الطلب
           </button>
@@ -105,24 +144,38 @@
           <button class="secondary" id="clearCart" type="button">
             تفريغ السلة
           </button>
+
         </div>
+
       </div>
     </section>
+
   </main>
 
   <!-- الفوتر -->
   <footer>
     <div class="wrap">
+
       <h3 id="footerName">زهرة حماة</h3>
+
       <p>شكراً لزيارتكم متجرنا 💚</p>
-      <p>جميع الحقوق محفوظة © <span id="footerNameBottom">زهرة حماة</span></p>
+
+      <p>
+        جميع الحقوق محفوظة ©
+        <span id="footerNameBottom">زهرة حماة</span>
+      </p>
+
     </div>
   </footer>
 
   <!-- نافذة إتمام الطلب -->
   <div class="modal hidden" id="checkoutModal">
+
     <div class="modal-content">
-      <button class="close" type="button" data-close="checkoutModal">×</button>
+
+      <button class="close" type="button" data-close="checkoutModal">
+        ×
+      </button>
 
       <h2>إتمام الطلب</h2>
 
@@ -153,18 +206,24 @@
       <button class="primary" id="sendOrder" type="button">
         إرسال الطلب
       </button>
+
     </div>
   </div>
 
   <!-- لوحة الإدارة -->
   <div class="modal hidden" id="adminModal">
+
     <div class="modal-content admin-panel">
-      <button class="close" type="button" data-close="adminModal">×</button>
+
+      <button class="close" type="button" data-close="adminModal">
+        ×
+      </button>
 
       <h2>لوحة إدارة زهرة حماة</h2>
 
       <!-- تسجيل الدخول -->
       <div id="loginPane">
+
         <h3>تسجيل دخول الإدارة</h3>
 
         <div class="form-group">
@@ -182,6 +241,7 @@
         </button>
 
         <p id="loginMsg" class="hint"></p>
+
       </div>
 
       <!-- محتوى الإدارة بعد الدخول -->
@@ -197,9 +257,11 @@
 
         <!-- الإحصائيات -->
         <section class="admin-section">
+
           <h3>إحصائيات المتجر</h3>
 
           <div class="stats">
+
             <div class="stat-card">
               <span>كل الطلبات</span>
               <strong id="statOrders">0</strong>
@@ -219,11 +281,13 @@
               <span>إجمالي المبيعات</span>
               <strong id="statRevenue">0 جنيه</strong>
             </div>
+
           </div>
         </section>
 
         <!-- إضافة منتج -->
         <section class="admin-section">
+
           <h3>إضافة منتج جديد</h3>
 
           <div class="form-group">
@@ -242,9 +306,11 @@
           </div>
 
           <div class="image-upload">
+
             <label>صورة المنتج</label>
 
             <div class="image-upload-buttons">
+
               <button class="secondary" id="chooseGallery" type="button">
                 🖼️ اختيار من المعرض
               </button>
@@ -252,6 +318,7 @@
               <button class="secondary" id="takeProductPhoto" type="button">
                 📷 تصوير بالكاميرا
               </button>
+
             </div>
 
             <input
@@ -282,11 +349,13 @@
             >
               إزالة الصورة
             </button>
+
           </div>
 
           <button class="primary" id="addProduct" type="button">
             إضافة المنتج
           </button>
+
         </section>
 
         <!-- إدارة المنتجات -->
@@ -303,6 +372,7 @@
 
         <!-- إعدادات المتجر -->
         <section class="admin-section">
+
           <h3>إعدادات المتجر والتواصل</h3>
 
           <div class="form-group">
@@ -328,10 +398,12 @@
           <button class="primary" id="saveSettings" type="button">
             حفظ إعدادات المتجر
           </button>
+
         </section>
 
         <!-- تحديث بيانات الدخول -->
         <section class="admin-section">
+
           <h3>تحديث بيانات دخول الإدارة</h3>
 
           <div class="form-group">
@@ -347,6 +419,7 @@
           <button class="primary" id="updateAdminCredentials" type="button">
             تحديث بيانات الدخول
           </button>
+
         </section>
 
       </div>
@@ -360,6 +433,42 @@
 
   <!-- ملف تشغيل المتجر -->
   <script src="app.js"></script>
+
+  <!-- احتياط لفتح وإغلاق النوافذ -->
+  <script>
+    (function () {
+      const openAdmin = document.getElementById("openAdmin");
+      const adminModal = document.getElementById("adminModal");
+      const checkoutModal = document.getElementById("checkoutModal");
+
+      if (openAdmin && adminModal) {
+        openAdmin.addEventListener("click", function () {
+          adminModal.classList.remove("hidden");
+        });
+      }
+
+      document.querySelectorAll("[data-close]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const modalId = button.getAttribute("data-close");
+          const modal = document.getElementById(modalId);
+
+          if (modal) {
+            modal.classList.add("hidden");
+          }
+        });
+      });
+
+      [adminModal, checkoutModal].forEach(function (modal) {
+        if (!modal) return;
+
+        modal.addEventListener("click", function (event) {
+          if (event.target === modal) {
+            modal.classList.add("hidden");
+          }
+        });
+      });
+    })();
+  </script>
 
 </body>
 </html>
