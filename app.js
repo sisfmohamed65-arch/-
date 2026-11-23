@@ -414,28 +414,75 @@ if ($("clearCart")) {
 }
 
 // ==========================================
+// تجهيز نسخ الرسالة
+// ==========================================
+
+async function copyOrderMessage(message) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(message);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Clipboard API unavailable:", error);
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = message;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.left = "-9999px";
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let copied = false;
+
+  try {
+    copied = document.execCommand("copy");
+  } catch (error) {
+    console.warn("Copy fallback failed:", error);
+  }
+
+  textarea.remove();
+  return copied;
+}
+
+// ==========================================
 // إتمام الطلب
 // ==========================================
 
 if ($("checkout")) {
-  $("checkout").onclick = () => {
+  $("checkout").addEventListener("click", event => {
+    event.preventDefault();
+
     if (!getCartEntries().length) {
       alert("ضيف منتجات للسلة الأول.");
       return;
     }
+
     openModal("checkoutModal");
-  };
+  });
 }
 
 if ($("sendOrder")) {
-  $("sendOrder").onclick = async () => {
-    const name = $("customerName").value.trim();
-    const phone = $("customerPhone").value.trim();
-    const address = $("customerAddress").value.trim();
-    const channel = $("contactChannel").value;
+  $("sendOrder").addEventListener("click", async event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const name = $("customerName")?.value.trim() || "";
+    const phone = $("customerPhone")?.value.trim() || "";
+    const address = $("customerAddress")?.value.trim() || "";
+    const channel = $("contactChannel")?.value || "";
 
     if (!name || !phone || !address) {
       alert("اكتب الاسم ورقم الموبايل والعنوان.");
+      return;
+    }
+
+    if (!["whatsapp", "messenger", "facebook"].includes(channel)) {
+      alert("اختار وسيلة تواصل صحيحة.");
       return;
     }
 
@@ -487,13 +534,45 @@ ${items.map(item =>
 
 الإجمالي: ${money(total)} جنيه`;
 
+    let contactUrl = "";
+
+    if (channel === "whatsapp") {
+      const digits = settings.whatsapp.replace(/\D/g, "");
+
+      if (!digits) {
+        alert("رقم واتساب غير صحيح. راجع إعدادات المتجر.");
+        return;
+      }
+
+      contactUrl =
+        `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+
+    } else {
+      try {
+        const parsed = new URL(destination);
+
+        if (!["https:", "http:"].includes(parsed.protocol)) {
+          throw new Error("رابط التواصل غير صالح.");
+        }
+
+        contactUrl = parsed.href;
+
+      } catch (error) {
+        alert("رابط التواصل غير صحيح. راجعه من إعدادات المتجر.");
+        return;
+      }
+    }
+
     const button = $("sendOrder");
+    const normalText = button.textContent;
+
+    // فتح نافذة التواصل أثناء ضغطة المستخدم
     let contactWindow = null;
 
     try {
       contactWindow = window.open("about:blank", "_blank");
     } catch (error) {
-      console.warn(error);
+      console.warn("Popup error:", error);
     }
 
     button.disabled = true;
@@ -510,52 +589,57 @@ ${items.map(item =>
         status: "new",
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-    } catch (error) {
-      console.error(error);
-      if (contactWindow) contactWindow.close();
 
-      alert("تعذر حفظ الطلب. حاول مرة أخرى.");
-      button.disabled = false;
-      button.textContent = "إرسال الطلب";
-      return;
-    }
+      let copied = false;
 
-    let contactUrl = "";
-
-    if (channel === "whatsapp") {
-      const digits = settings.whatsapp.replace(/\D/g, "");
-      contactUrl = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-    } else {
-      try {
-        await navigator.clipboard.writeText(message);
-      } catch (error) {
-        console.warn("Clipboard unavailable:", error);
+      if (channel !== "whatsapp") {
+        copied = await copyOrderMessage(message);
       }
-      contactUrl = destination;
+
+      if (contactWindow && !contactWindow.closed) {
+        contactWindow.location.href = contactUrl;
+      } else {
+        window.location.href = contactUrl;
+      }
+
+      cart = {};
+      renderCart();
+
+      $("customerName").value = "";
+      $("customerPhone").value = "";
+      $("customerAddress").value = "";
+
+      closeModal("checkoutModal");
+
+      if (channel === "messenger" || channel === "facebook") {
+        alert(
+          copied
+            ? "تم حفظ الطلب ونسخ تفاصيله. الصق الرسالة في المحادثة لإرسالها."
+            : "تم حفظ الطلب وفتح صفحة التواصل. انسخ تفاصيل الطلب من لوحة الإدارة والصقها في المحادثة."
+        );
+      }
+
+    } catch (error) {
+      console.error("Order sending error:", error);
+
+      if (contactWindow && !contactWindow.closed) {
+        contactWindow.close();
+      }
+
+      alert("تعذر تسجيل الطلب. حاول مرة أخرى.");
+
+    } finally {
+      button.disabled = false;
+      button.textContent = normalText;
     }
+  });
+}
 
-    if (contactWindow && contactUrl) {
-      contactWindow.location.href = contactUrl;
-    } else if (contactUrl) {
-      window.location.href = contactUrl;
-    }
-
-    if (channel !== "whatsapp") {
-      alert("تم حفظ الطلب. تفاصيله جاهزة للنسخ والإرسال.");
-    }
-
-    cart = {};
-    renderCart();
-
-    $("customerName").value = "";
-    $("customerPhone").value = "";
-    $("customerAddress").value = "";
-
-    closeModal("checkoutModal");
-
-    button.disabled = false;
-    button.textContent = "إرسال الطلب";
-  };
+// منع إعادة تحميل الصفحة لو تم إرسال النموذج بزر Enter
+if ($("checkoutModal")) {
+  $("checkoutModal").addEventListener("submit", event => {
+    event.preventDefault();
+  });
 }
 
 // ==========================================
@@ -1061,7 +1145,6 @@ async function startStore() {
     return;
   }
 
-  // إلغاء الجلسة المحفوظة عند بدء الموقع
   try {
     if (auth.currentUser) {
       await auth.signOut();
