@@ -2,473 +2,240 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#176b45">
-  <meta name="description" content="زهرة حماة - متجر المنتجات الغذائية والبقالة">
-  <title>زهرة حماة | المتجر</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#176b45">
+<meta name="description" content="زهرة حماة - متجر المنتجات الغذائية والبقالة">
+<title>زهرة حماة | المتجر</title>
+<link rel="stylesheet" href="styles.css">
 
-  <!-- ضمان إخفاء النوافذ المغلقة -->
-  <style>
-    .hidden {
-      display: none !important;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      overflow-y: auto;
-      pointer-events: auto;
-    }
-
-    .modal-content {
-      position: relative;
-      pointer-events: auto;
-    }
-
-    .modal button,
-    .modal input,
-    .modal textarea,
-    .modal select {
-      pointer-events: auto;
-    }
-  </style>
+<style>
+.hidden{display:none!important}
+.modal{position:fixed;inset:0;z-index:9999;overflow-y:auto;background:#0009;padding:15px}
+.modal-content{position:relative;max-width:850px;margin:25px auto;background:white;color:#222;border-radius:18px;padding:22px}
+.admin-panel{padding-bottom:100px}
+.admin-section{margin:18px 0;padding:16px;border:1px solid #e5e5e5;border-radius:14px}
+.admin-section h3{margin-top:0}
+.admin-nav{position:fixed;bottom:0;right:0;left:0;z-index:10001;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px calc(9px + env(safe-area-inset-bottom));box-shadow:0 -4px 15px #0001}
+.admin-nav button{border:0;background:transparent;color:#555;padding:7px 2px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.admin-nav button span{font-size:20px}
+.admin-nav button.active{color:#176b45;font-weight:bold}
+.admin-nav button.active span{transform:translateY(-2px)}
+.admin-content{padding-bottom:20px}
+.admin-welcome{background:#176b45;color:white;border-radius:14px;padding:15px;margin:15px 0}
+.admin-welcome p{margin:5px 0 0}
+.admin-section input,.admin-section textarea{max-width:100%}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat-card{padding:14px;border-radius:12px;background:#f1f7f3;display:flex;flex-direction:column;gap:8px}
+.stat-card strong{font-size:20px;color:#176b45}
+.admin-order{border:1px solid #ddd;border-radius:12px;padding:14px;margin:12px 0}
+.admin-order p{overflow-wrap:anywhere}
+.admin-order ul{padding-right:22px}
+.order-actions{display:flex;gap:8px;flex-wrap:wrap}
+.product-image-preview{display:block;max-width:180px;max-height:180px;object-fit:contain;margin:12px 0}
+.image-upload-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.form-group{margin:12px 0}
+.form-group label{display:block;margin-bottom:6px}
+.form-group input,.form-group textarea,.form-group select{width:100%;box-sizing:border-box}
+.close{position:absolute;left:12px;top:10px;border:0;background:transparent;font-size:28px;cursor:pointer}
+.admin-login-box{max-width:480px;margin:20px auto}
+@media(max-width:480px){
+.modal{padding:8px}
+.modal-content{margin:8px auto;padding:16px}
+.admin-panel{padding-bottom:90px}
+.admin-nav button{font-size:10px}
+}
+</style>
 </head>
 
 <body>
 
-  <!-- رأس الموقع -->
-  <header class="top">
-    <div class="wrap nav">
-      <a href="#" class="brand">
-        🌿 <span id="storeTitle">زهرة حماة</span>
-      </a>
-
-      <div class="nav-actions">
-        <button class="secondary" id="openAdmin" type="button">
-          لوحة الإدارة
-        </button>
-
-        <a href="#cart" class="primary">
-          🛒 السلة (<span id="cartCount">0</span>)
-        </a>
-      </div>
-    </div>
-  </header>
-
-  <!-- الواجهة الرئيسية -->
-  <main>
-
-    <section class="hero">
-      <div class="wrap hero-content">
-        <h1>أهلاً بيكم في زهرة حماة 🌿</h1>
-
-        <p>
-          كل احتياجاتك في مكان واحد.
-          اختار منتجاتك واطلب بسهولة من متجرنا.
-        </p>
-
-        <a href="#productsSection" class="primary">
-          تسوق الآن
-        </a>
-      </div>
-    </section>
-
-    <!-- مميزات المتجر -->
-    <section class="wrap features">
-
-      <div class="feature">
-        <h3>🛍️ منتجات متنوعة</h3>
-        <p>اختيارات متعددة تناسب احتياجاتك.</p>
-      </div>
-
-      <div class="feature">
-        <h3>📱 طلب سهل</h3>
-        <p>اطلب منتجاتك بخطوات بسيطة.</p>
-      </div>
-
-      <div class="feature">
-        <h3>💚 خدمة العملاء</h3>
-        <p>تواصل معنا بسهولة.</p>
-      </div>
-
-    </section>
-
-    <!-- المنتجات -->
-    <section class="wrap section" id="productsSection">
-
-      <h2 class="section-title">منتجاتنا</h2>
-
-      <div class="toolbar">
-        <input
-          type="search"
-          id="search"
-          placeholder="ابحث عن منتج..."
-          aria-label="البحث عن منتج"
-        >
-      </div>
-
-      <div id="categories" class="toolbar"></div>
-
-      <div id="products" class="products">
-        <p class="muted">جاري تحميل المنتجات...</p>
-      </div>
-
-    </section>
-
-    <!-- السلة -->
-    <section class="wrap section" id="cart">
-
-      <div class="cart">
-
-        <h2 class="section-title">🛒 سلة المشتريات</h2>
-
-        <div id="cartItems">
-          <p class="muted">السلة لسه فاضية.</p>
-        </div>
-
-        <div class="cart-total">
-          الإجمالي:
-          <span id="total">0</span>
-          جنيه
-        </div>
-
-        <div class="toolbar" style="margin-top:18px">
-
-          <button class="primary" id="checkout" type="button">
-            إتمام الطلب
-          </button>
-
-          <button class="secondary" id="clearCart" type="button">
-            تفريغ السلة
-          </button>
-
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- الفوتر -->
-  <footer>
-    <div class="wrap">
-
-      <h3 id="footerName">زهرة حماة</h3>
-
-      <p>شكراً لزيارتكم متجرنا 💚</p>
-
-      <p>
-        جميع الحقوق محفوظة ©
-        <span id="footerNameBottom">زهرة حماة</span>
-      </p>
-
-    </div>
-  </footer>
-
-  <!-- نافذة إتمام الطلب -->
-  <div class="modal hidden" id="checkoutModal">
-
-    <div class="modal-content">
-
-      <button class="close" type="button" data-close="checkoutModal">
-        ×
-      </button>
-
-      <h2>إتمام الطلب</h2>
-
-      <div class="form-group">
-        <label for="customerName">الاسم بالكامل</label>
-        <input id="customerName" type="text" placeholder="اكتب اسمك">
-      </div>
-
-      <div class="form-group">
-        <label for="customerPhone">رقم الموبايل</label>
-        <input id="customerPhone" type="tel" placeholder="01xxxxxxxxx">
-      </div>
-
-      <div class="form-group">
-        <label for="customerAddress">العنوان بالتفصيل</label>
-        <textarea id="customerAddress" placeholder="اكتب عنوانك"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label for="contactChannel">طريقة التواصل</label>
-        <select id="contactChannel">
-          <option value="whatsapp">واتساب</option>
-          <option value="messenger">ماسنجر</option>
-          <option value="facebook">فيسبوك</option>
-        </select>
-      </div>
-
-      <button class="primary" id="sendOrder" type="button">
-        إرسال الطلب
-      </button>
-
-    </div>
-  </div>
-
-  <!-- لوحة الإدارة -->
-  <div class="modal hidden" id="adminModal">
-
-    <div class="modal-content admin-panel">
-
-      <button class="close" type="button" data-close="adminModal">
-        ×
-      </button>
-
-      <h2>لوحة إدارة زهرة حماة</h2>
-
-      <!-- تسجيل الدخول -->
-      <div id="loginPane">
-
-        <h3>تسجيل دخول الإدارة</h3>
-
-        <div class="form-group">
-          <label for="adminEmail">البريد الإلكتروني</label>
-          <input id="adminEmail" type="email" placeholder="البريد الإلكتروني">
-        </div>
-
-        <div class="form-group">
-          <label for="adminPassword">كلمة المرور</label>
-          <input id="adminPassword" type="password" placeholder="كلمة المرور">
-        </div>
-
-        <button class="primary" id="adminLogin" type="button">
-          تسجيل الدخول
-        </button>
-
-        <p id="loginMsg" class="hint"></p>
-
-      </div>
-
-      <!-- محتوى الإدارة بعد الدخول -->
-      <div id="adminPane" class="hidden">
-
-        <div class="toolbar">
-          <button class="secondary" id="logout" type="button">
-            تسجيل الخروج
-          </button>
-        </div>
-
-        <p id="adminMsg" class="hint"></p>
-
-        <!-- الإحصائيات -->
-        <section class="admin-section">
-
-          <h3>إحصائيات المتجر</h3>
-
-          <div class="stats">
-
-            <div class="stat-card">
-              <span>كل الطلبات</span>
-              <strong id="statOrders">0</strong>
-            </div>
-
-            <div class="stat-card">
-              <span>الطلبات الجديدة</span>
-              <strong id="statNew">0</strong>
-            </div>
-
-            <div class="stat-card">
-              <span>الطلبات المكتملة</span>
-              <strong id="statCompleted">0</strong>
-            </div>
-
-            <div class="stat-card">
-              <span>إجمالي المبيعات</span>
-              <strong id="statRevenue">0 جنيه</strong>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- إضافة منتج -->
-        <section class="admin-section">
-
-          <h3>إضافة منتج جديد</h3>
-
-          <div class="form-group">
-            <label for="newName">اسم المنتج</label>
-            <input id="newName" type="text" placeholder="اسم المنتج">
-          </div>
-
-          <div class="form-group">
-            <label for="newPrice">السعر بالجنيه</label>
-            <input id="newPrice" type="number" min="0" step="0.01" placeholder="السعر">
-          </div>
-
-          <div class="form-group">
-            <label for="newCategory">القسم</label>
-            <input id="newCategory" type="text" placeholder="مثلاً: مواد غذائية">
-          </div>
-
-          <div class="image-upload">
-
-            <label>صورة المنتج</label>
-
-            <div class="image-upload-buttons">
-
-              <button class="secondary" id="chooseGallery" type="button">
-                🖼️ اختيار من المعرض
-              </button>
-
-              <button class="secondary" id="takeProductPhoto" type="button">
-                📷 تصوير بالكاميرا
-              </button>
-
-            </div>
-
-            <input
-              type="file"
-              id="productImageGallery"
-              accept="image/*"
-              hidden
-            >
-
-            <input
-              type="file"
-              id="productImageCamera"
-              accept="image/*"
-              capture="environment"
-              hidden
-            >
-
-            <img
-              id="productImagePreview"
-              class="product-image-preview hidden"
-              alt="معاينة صورة المنتج"
-            >
-
-            <button
-              class="link hidden"
-              id="removeProductImage"
-              type="button"
-            >
-              إزالة الصورة
-            </button>
-
-          </div>
-
-          <button class="primary" id="addProduct" type="button">
-            إضافة المنتج
-          </button>
-
-        </section>
-
-        <!-- إدارة المنتجات -->
-        <section class="admin-section">
-          <h3>إدارة المنتجات</h3>
-          <div id="adminProducts"></div>
-        </section>
-
-        <!-- الطلبات -->
-        <section class="admin-section">
-          <h3>طلبات العملاء</h3>
-          <div id="adminOrders"></div>
-        </section>
-
-        <!-- إعدادات المتجر -->
-        <section class="admin-section">
-
-          <h3>إعدادات المتجر والتواصل</h3>
-
-          <div class="form-group">
-            <label for="editStoreName">اسم المتجر</label>
-            <input id="editStoreName" type="text">
-          </div>
-
-          <div class="form-group">
-            <label for="editWhatsapp">رقم واتساب مع مفتاح الدولة</label>
-            <input id="editWhatsapp" type="tel">
-          </div>
-
-          <div class="form-group">
-            <label for="editFacebook">رابط صفحة فيسبوك</label>
-            <input id="editFacebook" type="url">
-          </div>
-
-          <div class="form-group">
-            <label for="editMessenger">رابط ماسنجر</label>
-            <input id="editMessenger" type="url">
-          </div>
-
-          <button class="primary" id="saveSettings" type="button">
-            حفظ إعدادات المتجر
-          </button>
-
-        </section>
-
-        <!-- تحديث بيانات الدخول -->
-        <section class="admin-section">
-
-          <h3>تحديث بيانات دخول الإدارة</h3>
-
-          <div class="form-group">
-            <label for="newAdminEmail">البريد الإلكتروني الجديد</label>
-            <input id="newAdminEmail" type="email">
-          </div>
-
-          <div class="form-group">
-            <label for="newAdminPassword">كلمة المرور الجديدة</label>
-            <input id="newAdminPassword" type="password">
-          </div>
-
-          <button class="primary" id="updateAdminCredentials" type="button">
-            تحديث بيانات الدخول
-          </button>
-
-        </section>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-  <!-- ملف تشغيل المتجر -->
-  <script src="app.js"></script>
-
-  <!-- احتياط لفتح وإغلاق النوافذ -->
-  <script>
-    (function () {
-      const openAdmin = document.getElementById("openAdmin");
-      const adminModal = document.getElementById("adminModal");
-      const checkoutModal = document.getElementById("checkoutModal");
-
-      if (openAdmin && adminModal) {
-        openAdmin.addEventListener("click", function () {
-          adminModal.classList.remove("hidden");
-        });
-      }
-
-      document.querySelectorAll("[data-close]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          const modalId = button.getAttribute("data-close");
-          const modal = document.getElementById(modalId);
-
-          if (modal) {
-            modal.classList.add("hidden");
-          }
-        });
-      });
-
-      [adminModal, checkoutModal].forEach(function (modal) {
-        if (!modal) return;
-
-        modal.addEventListener("click", function (event) {
-          if (event.target === modal) {
-            modal.classList.add("hidden");
-          }
-        });
-      });
-    })();
-  </script>
-
+<header class="top">
+<div class="wrap nav">
+<a href="#" class="brand">🌿 <span id="storeTitle">زهرة حماة</span></a>
+<div class="nav-actions">
+<button class="secondary" id="openAdmin" type="button">لوحة الإدارة</button>
+<a href="#cart" class="primary">🛒 السلة (<span id="cartCount">0</span>)</a>
+</div>
+</div>
+</header>
+
+<main>
+<section class="hero">
+<div class="wrap hero-content">
+<h1>أهلاً بيكم في زهرة حماة 🌿</h1>
+<p>كل احتياجاتك في مكان واحد. اختار منتجاتك واطلب بسهولة من متجرنا.</p>
+<a href="#productsSection" class="primary">تسوق الآن</a>
+</div>
+</section>
+
+<section class="wrap features">
+<div class="feature"><h3>🛍️ منتجات متنوعة</h3><p>اختيارات متعددة تناسب احتياجاتك.</p></div>
+<div class="feature"><h3>📱 طلب سهل</h3><p>اطلب منتجاتك بخطوات بسيطة.</p></div>
+<div class="feature"><h3>💚 خدمة العملاء</h3><p>تواصل معنا بسهولة.</p></div>
+</section>
+
+<section class="wrap section" id="productsSection">
+<h2 class="section-title">منتجاتنا</h2>
+<div class="toolbar">
+<input type="search" id="search" placeholder="ابحث عن منتج..." aria-label="البحث عن منتج">
+</div>
+<div id="categories" class="toolbar"></div>
+<div id="products" class="products"><p class="muted">جاري تحميل المنتجات...</p></div>
+</section>
+
+<section class="wrap section" id="cart">
+<div class="cart">
+<h2 class="section-title">🛒 سلة المشتريات</h2>
+<div id="cartItems"><p class="muted">السلة لسه فاضية.</p></div>
+<div class="cart-total">الإجمالي: <span id="total">0</span> جنيه</div>
+<div class="toolbar" style="margin-top:18px">
+<button class="primary" id="checkout" type="button">إتمام الطلب</button>
+<button class="secondary" id="clearCart" type="button">تفريغ السلة</button>
+</div>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+<h3 id="footerName">زهرة حماة</h3>
+<p>شكراً لزيارتكم 💚</p>
+<p>جميع الحقوق محفوظة © <span id="footerNameBottom">زهرة حماة</span></p>
+</div>
+</footer>
+
+<!-- نافذة الطلب -->
+<div class="modal hidden" id="checkoutModal">
+<div class="modal-content">
+<button class="close" type="button" data-close="checkoutModal">×</button>
+<h2>إتمام الطلب</h2>
+<div class="form-group"><label for="customerName">الاسم بالكامل</label><input id="customerName" type="text" placeholder="اكتب اسمك"></div>
+<div class="form-group"><label for="customerPhone">رقم الموبايل</label><input id="customerPhone" type="tel" placeholder="01xxxxxxxxx"></div>
+<div class="form-group"><label for="customerAddress">العنوان بالتفصيل</label><textarea id="customerAddress" placeholder="اكتب عنوانك"></textarea></div>
+<div class="form-group">
+<label for="contactChannel">طريقة التواصل</label>
+<select id="contactChannel">
+<option value="whatsapp">واتساب</option>
+<option value="messenger">ماسنجر</option>
+<option value="facebook">فيسبوك</option>
+</select>
+</div>
+<button class="primary" id="sendOrder" type="button">إرسال الطلب</button>
+</div>
+</div>
+
+<!-- لوحة الإدارة -->
+<div class="modal hidden" id="adminModal">
+<div class="modal-content admin-panel">
+<button class="close" type="button" id="closeAdmin" aria-label="إغلاق">×</button>
+<h2>لوحة إدارة زهرة حماة</h2>
+
+<!-- تسجيل الدخول -->
+<div id="loginPane" class="admin-login-box">
+<h3>تسجيل دخول الإدارة</h3>
+<div class="form-group">
+<label for="adminEmail">البريد الإلكتروني</label>
+<input id="adminEmail" type="email" autocomplete="username" placeholder="البريد الإلكتروني">
+</div>
+<div class="form-group">
+<label for="adminPassword">كلمة المرور</label>
+<input id="adminPassword" type="password" autocomplete="current-password" placeholder="كلمة المرور">
+</div>
+<button class="primary" id="adminLogin" type="button">تسجيل الدخول</button>
+<p id="loginMsg" class="hint"></p>
+</div>
+
+<!-- لوحة التحكم -->
+<div id="adminPane" class="hidden">
+<div class="admin-welcome">
+<strong>أهلاً بك في إدارة المتجر</strong>
+<p>اختر القسم الذي تريد إدارته من الشريط بالأسفل.</p>
+</div>
+
+<p id="adminMsg" class="hint"></p>
+
+<div class="admin-content">
+
+<section class="admin-section admin-tab" id="tabSales">
+<h3>📊 المبيعات والأرباح</h3>
+<div class="stats">
+<div class="stat-card"><span>كل الطلبات</span><strong id="statOrders">0</strong></div>
+<div class="stat-card"><span>الطلبات الجديدة</span><strong id="statNew">0</strong></div>
+<div class="stat-card"><span>الطلبات المكتملة</span><strong id="statCompleted">0</strong></div>
+<div class="stat-card"><span>إجمالي المبيعات</span><strong id="statRevenue">0 جنيه</strong></div>
+</div>
+</section>
+
+<section class="admin-section admin-tab hidden" id="tabProducts">
+<h3>➕ إضافة منتج جديد</h3>
+<div class="form-group"><label for="newName">اسم المنتج</label><input id="newName" type="text" placeholder="اسم المنتج"></div>
+<div class="form-group"><label for="newPrice">السعر بالجنيه</label><input id="newPrice" type="number" min="0" step="0.01" placeholder="السعر"></div>
+<div class="form-group"><label for="newCategory">القسم</label><input id="newCategory" type="text" placeholder="مثلاً: مواد غذائية"></div>
+
+<div class="image-upload">
+<label>صورة المنتج</label>
+<div class="image-upload-buttons">
+<button class="secondary" id="chooseGallery" type="button">🖼️ اختيار من المعرض</button>
+<button class="secondary" id="takeProductPhoto" type="button">📷 تصوير بالكاميرا</button>
+</div>
+<input type="file" id="productImageGallery" accept="image/*" hidden>
+<input type="file" id="productImageCamera" accept="image/*" capture="environment" hidden>
+<img id="productImagePreview" class="product-image-preview hidden" alt="معاينة صورة المنتج">
+<button class="link hidden" id="removeProductImage" type="button">إزالة الصورة</button>
+</div>
+<button class="primary" id="addProduct" type="button">إضافة المنتج</button>
+
+<hr>
+<h3>إدارة المنتجات الحالية</h3>
+<div id="adminProducts"></div>
+</section>
+
+<section class="admin-section admin-tab hidden" id="tabOrders">
+<h3>🛍️ طلبات العملاء</h3>
+<div id="adminOrders"></div>
+</section>
+
+<section class="admin-section admin-tab hidden" id="tabContact">
+<h3>📱 وسائل التواصل</h3>
+<div class="form-group"><label for="editWhatsapp">رقم واتساب مع مفتاح الدولة</label><input id="editWhatsapp" type="tel" placeholder="مثال: 2010xxxxxxxx"></div>
+<div class="form-group"><label for="editFacebook">رابط صفحة فيسبوك</label><input id="editFacebook" type="url" placeholder="https://facebook.com/..."></div>
+<div class="form-group"><label for="editMessenger">رابط ماسنجر</label><input id="editMessenger" type="url" placeholder="https://m.me/..."></div>
+<button class="primary" id="saveSettings" type="button">حفظ وسائل التواصل</button>
+</section>
+
+<section class="admin-section admin-tab hidden" id="tabSettings">
+<h3>⚙️ إعدادات المحل</h3>
+<div class="form-group"><label for="editStoreName">اسم المتجر</label><input id="editStoreName" type="text"></div>
+<button class="primary" id="saveStoreName" type="button">حفظ اسم المحل</button>
+
+<hr>
+<h3>تحديث بيانات دخول الإدارة</h3>
+<div class="form-group"><label for="newAdminEmail">البريد الإلكتروني الجديد</label><input id="newAdminEmail" type="email"></div>
+<div class="form-group"><label for="newAdminPassword">كلمة المرور الجديدة</label><input id="newAdminPassword" type="password"></div>
+<button class="primary" id="updateAdminCredentials" type="button">تحديث بيانات الدخول</button>
+
+<hr>
+<button class="secondary" id="logout" type="button">تسجيل الخروج</button>
+</section>
+
+</div>
+
+<!-- شريط التنقل السفلي -->
+<nav class="admin-nav" aria-label="أقسام الإدارة">
+<button type="button" class="active" data-admin-tab="tabSales"><span>📊</span>المبيعات</button>
+<button type="button" data-admin-tab="tabProducts"><span>📦</span>المنتجات</button>
+<button type="button" data-admin-tab="tabOrders"><span>🛒</span>الطلبات</button>
+<button type="button" data-admin-tab="tabContact"><span>📱</span>التواصل</button>
+<button type="button" data-admin-tab="tabSettings"><span>⚙️</span>الإعدادات</button>
+</nav>
+</div>
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
